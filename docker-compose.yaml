@@ -86,7 +86,40 @@ services:
       postgres-auth:
         condition: service_healthy
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      TZ: Asia/Bangkok
+    ports:
+      - "15672:15672" # management ui
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+
+  mongo:
+    image: mongo:7
+    environment:
+      TZ: Asia/Bangkok
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - mongodata:/data/db
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025" # web ui
+
 volumes:
   pgdata-subscription:
   pgdata-user:
   pgdata-auth:
+  rabbitmqdata:
+  mongodata:
