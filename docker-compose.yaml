@@ -226,6 +226,22 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  frontend:
+    build: ../sgt-frontend
+    image: sgt-frontend:local
+
+  gateway:
+    build: ../sgt-gateway
+    image: sgt-gateway:local
+    ports:
+      - "8000:80"
+    depends_on:
+      - auth-service
+      - user-service
+      - subscription-service
+      - report-service
+      - frontend
+
 volumes:
   pgdata-subscription:
   pgdata-user:
