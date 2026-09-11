@@ -117,6 +117,68 @@ services:
     ports:
       - "8025:8025" # web ui
 
+  subscription-service:
+    build: ../sgt-subscription-service
+    image: sgt-subscription-service:local
+    environment:
+      PORT: 8080
+      GRPC_PORT: 50051
+      JWT_SECRET: ${JWT_SECRET}
+      ENABLE_SWAGGER: "false"
+      DB_HOST: postgres-subscription
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: subscriptions
+      DB_SSLMODE: disable
+    depends_on:
+      migrate-subscription:
+        condition: service_completed_successfully
+
+  user-service:
+    build: ../sgt-user-service
+    image: sgt-user-service:local
+    environment:
+      PORT: 8080
+      GRPC_PORT: 50052
+      JWT_SECRET: ${JWT_SECRET}
+      ENABLE_SWAGGER: "false"
+      DB_HOST: postgres-user
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: users
+      DB_SSLMODE: disable
+    depends_on:
+      migrate-user:
+        condition: service_completed_successfully
+
+  auth-service:
+    build: ../sgt-auth-service
+    image: sgt-auth-service:local
+    environment:
+      PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TTL: 15m
+      REFRESH_TTL: 720h
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URL: http://localhost:8000/api/v1/auth/google/callback
+      PUBLIC_URL: http://localhost:8000
+      USER_SERVICE_ADDR: user-service:50052
+      ENABLE_SWAGGER: "false"
+      DB_HOST: postgres-auth
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: auth
+      DB_SSLMODE: disable
+    depends_on:
+      migrate-auth:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
+
 volumes:
   pgdata-subscription:
   pgdata-user:
