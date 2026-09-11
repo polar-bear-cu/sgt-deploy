@@ -1,0 +1,92 @@
+services:
+  postgres-subscription:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: subscriptions
+      TZ: Asia/Bangkok
+    volumes:
+      - pgdata-subscription:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-user:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users
+      TZ: Asia/Bangkok
+    volumes:
+      - pgdata-user:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-auth:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth
+      TZ: Asia/Bangkok
+    volumes:
+      - pgdata-auth:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate-subscription:
+    image: migrate/migrate:v4.18.1
+    volumes:
+      - ../sgt-subscription-service/migrations:/migrations:ro
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://postgres:postgres@postgres-subscription:5432/subscriptions?sslmode=disable",
+        "up",
+      ]
+    depends_on:
+      postgres-subscription:
+        condition: service_healthy
+
+  migrate-user:
+    image: migrate/migrate:v4.18.1
+    volumes:
+      - ../sgt-user-service/migrations:/migrations:ro
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://postgres:postgres@postgres-user:5432/users?sslmode=disable",
+        "up",
+      ]
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+
+  migrate-auth:
+    image: migrate/migrate:v4.18.1
+    volumes:
+      - ../sgt-auth-service/migrations:/migrations:ro
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://postgres:postgres@postgres-auth:5432/auth?sslmode=disable",
+        "up",
+      ]
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+
+volumes:
+  pgdata-subscription:
+  pgdata-user:
+  pgdata-auth:
