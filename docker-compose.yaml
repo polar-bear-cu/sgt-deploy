@@ -179,6 +179,53 @@ services:
       user-service:
         condition: service_started
 
+  report-service:
+    build: ../sgt-report-service
+    image: sgt-report-service:local
+    environment:
+      PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
+      ENABLE_SWAGGER: "false"
+    depends_on:
+      subscription-service:
+        condition: service_started
+
+  noti-service:
+    build: ../sgt-noti-service
+    image: sgt-noti-service:local
+    environment:
+      PORT: 8080
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM: noreply@subglutee.local
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB_NAME: noti
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  scheduler:
+    build: ../sgt-scheduler
+    image: sgt-scheduler:local
+    environment:
+      PORT: 8080
+      CRON_SPEC: "@every 1h"
+      WITHIN_HOURS: 24
+      SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
+      USER_SERVICE_ADDR: user-service:50052
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      subscription-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   pgdata-subscription:
   pgdata-user:
