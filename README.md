@@ -27,7 +27,7 @@ final-proj/
 git clone https://github.com/polar-bear-cu/sgt-deploy.git
 cd sgt-deploy
 cp .env.example .env   # ใส่ GOOGLE_CLIENT_ID/SECRET จริงถ้าจะเทส login
-docker compose up -d --build
+make up
 ```
 
 - gateway: http://localhost:8000
@@ -49,7 +49,10 @@ frontend                                                  SPA, เข้าผ�
 ### Useful Commands
 
 ```terminal
-docker compose down -v          # ลบ container + volume (DB/queue data หาย)
-docker compose logs -f <name>   # ดู log service
-docker compose up -d --build <name>   # rebuild+restart service เดียว
+make up       # docker compose up -d --build
+make down     # docker compose down -v (ลบ volume, DB/queue data หาย)
+make logs     # docker compose logs -f
+make check    # docker compose config -q (CI ใช้ตัวนี้)
 ```
+
+rebuild/restart service เดียว: `docker compose up -d --build <name>`
