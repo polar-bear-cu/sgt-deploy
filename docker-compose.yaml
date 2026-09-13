@@ -226,6 +226,36 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  pgweb-subscription:
+    image: sosedoff/pgweb:latest
+    ports:
+      - "8081:8081"
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres-subscription:5432/subscriptions?sslmode=disable
+    depends_on:
+      postgres-subscription:
+        condition: service_healthy
+
+  pgweb-user:
+    image: sosedoff/pgweb:latest
+    ports:
+      - "8083:8081"
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres-user:5432/users?sslmode=disable
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+
+  pgweb-auth:
+    image: sosedoff/pgweb:latest
+    ports:
+      - "8085:8081"
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres-auth:5432/auth?sslmode=disable
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+
   frontend:
     build: ../sgt-frontend
     image: sgt-frontend:local
