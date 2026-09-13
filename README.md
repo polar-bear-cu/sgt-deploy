@@ -33,6 +33,7 @@ make up
 - gateway: http://localhost:8000
 - rabbitmq management ui: http://localhost:15672 (guest/guest)
 - mailhog ui: http://localhost:8025
+- mongo-express ui: http://localhost:8089
 - pgweb (subscription db): http://localhost:8081
 - pgweb (user db): http://localhost:8083
 - pgweb (auth db): http://localhost:8085

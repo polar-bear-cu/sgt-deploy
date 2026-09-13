@@ -6,6 +6,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: subscriptions
       TZ: Asia/Bangkok
+    ports:
+      - "5433:5432"
     volumes:
       - pgdata-subscription:/var/lib/postgresql/data
     healthcheck:
@@ -21,6 +23,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: users
       TZ: Asia/Bangkok
+    ports:
+      - "5434:5432"
     volumes:
       - pgdata-user:/var/lib/postgresql/data
     healthcheck:
@@ -36,6 +40,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: auth
       TZ: Asia/Bangkok
+    ports:
+      - "5435:5432"
     volumes:
       - pgdata-auth:/var/lib/postgresql/data
     healthcheck:
@@ -112,6 +118,17 @@ services:
     volumes:
       - mongodata:/data/db
 
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "8089:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
   mailhog:
     image: mailhog/mailhog
     ports:
@@ -120,6 +137,8 @@ services:
   subscription-service:
     build: ../sgt-subscription-service
     image: sgt-subscription-service:local
+    ports:
+      - "8080:8080"
     environment:
       PORT: 8080
       GRPC_PORT: 50051
@@ -138,6 +157,8 @@ services:
   user-service:
     build: ../sgt-user-service
     image: sgt-user-service:local
+    ports:
+      - "8082:8080"
     environment:
       PORT: 8080
       GRPC_PORT: 50052
@@ -156,6 +177,8 @@ services:
   auth-service:
     build: ../sgt-auth-service
     image: sgt-auth-service:local
+    ports:
+      - "8084:8080"
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
@@ -182,6 +205,8 @@ services:
   report-service:
     build: ../sgt-report-service
     image: sgt-report-service:local
+    ports:
+      - "8086:8080"
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
@@ -194,6 +219,8 @@ services:
   noti-service:
     build: ../sgt-noti-service
     image: sgt-noti-service:local
+    ports:
+      - "8088:8080"
     environment:
       PORT: 8080
       SMTP_HOST: mailhog
@@ -211,6 +238,8 @@ services:
   scheduler:
     build: ../sgt-scheduler
     image: sgt-scheduler:local
+    ports:
+      - "8090:8080"
     environment:
       PORT: 8080
       CRON_SPEC: "@every 1h"
