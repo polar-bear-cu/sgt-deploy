@@ -56,8 +56,10 @@ services:
       - ../sgt-subscription-service/migrations:/migrations:ro
     command:
       [
-        "-path", "/migrations",
-        "-database", "postgres://postgres:postgres@postgres-subscription:5432/subscriptions?sslmode=disable",
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://postgres:postgres@postgres-subscription:5432/subscriptions?sslmode=disable",
         "up",
       ]
     depends_on:
@@ -70,8 +72,10 @@ services:
       - ../sgt-user-service/migrations:/migrations:ro
     command:
       [
-        "-path", "/migrations",
-        "-database", "postgres://postgres:postgres@postgres-user:5432/users?sslmode=disable",
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://postgres:postgres@postgres-user:5432/users?sslmode=disable",
         "up",
       ]
     depends_on:
@@ -84,8 +88,10 @@ services:
       - ../sgt-auth-service/migrations:/migrations:ro
     command:
       [
-        "-path", "/migrations",
-        "-database", "postgres://postgres:postgres@postgres-auth:5432/auth?sslmode=disable",
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://postgres:postgres@postgres-auth:5432/auth?sslmode=disable",
         "up",
       ]
     depends_on:
@@ -196,6 +202,9 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: auth
       DB_SSLMODE: disable
+      COOKIE_DOMAIN: ""
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: "lax"
     depends_on:
       migrate-auth:
         condition: service_completed_successfully
