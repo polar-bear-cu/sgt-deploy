@@ -44,9 +44,11 @@ make up
 postgres-subscription / postgres-user / postgres-auth   แยก DB ต่อ service
 migrate-subscription / migrate-user / migrate-auth      one-shot migration job, รันก่อน service ที่เกี่ยวข้อง
 rabbitmq / mongo / mailhog                               shared infra (noti + scheduler ใช้ queue เดียวกัน)
-subscription-service / user-service / auth-service       REST + gRPC
-report-service / noti-service / scheduler                gRPC client / consumer, ไม่มี DB เอง
-gateway                                                   ทางเข้าเดียว (:8000), route ไป frontend + REST
+subscription-service / auth-service                      REST + gRPC
+user-service                                              gRPC only, เข้าผ่าน gateway to envoy (grpc-web bridge)
+report-service / noti-service / scheduler                 gRPC client / consumer, ไม่มี DB เอง
+envoy                                                      bridge grpc-web ไป gRPC ใน user-service
+gateway                                                    ทางเข้าเดียว (:8000), route ไป frontend + REST + grpc-web (envoy)
 frontend                                                  SPA, เข้าผ่าน gateway เท่านั้น (ไม่ publish port ตรง)
 ```
 
