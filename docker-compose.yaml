@@ -298,6 +298,15 @@ services:
     build: ../sgt-frontend
     image: sgt-frontend:local
 
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    ports:
+      - "8091:8081"
+    depends_on:
+      - user-service
+
   gateway:
     build: ../sgt-gateway
     image: sgt-gateway:local
@@ -309,6 +318,7 @@ services:
       - subscription-service
       - report-service
       - frontend
+      - envoy
 
 volumes:
   pgdata-subscription:
