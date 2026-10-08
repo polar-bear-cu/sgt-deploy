@@ -168,8 +168,8 @@ services:
       REFRESH_TTL: 720h
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_REDIRECT_URL: http://localhost:8000/api/v1/auth/google/callback
-      PUBLIC_URL: http://localhost:8000
+      GOOGLE_REDIRECT_URL: ${PUBLIC_URL:?set PUBLIC_URL}/api/v1/auth/google/callback
+      PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       USER_SERVICE_ADDR: user-service:50052
       ENABLE_SWAGGER: "false"
       DB_HOST: postgres-auth
@@ -179,7 +179,7 @@ services:
       DB_NAME: auth
       DB_SSLMODE: disable
       COOKIE_DOMAIN: ""
-      COOKIE_SECURE: "false"
+      COOKIE_SECURE: ${COOKIE_SECURE:?set COOKIE_SECURE}
       COOKIE_SAMESITE: "lax"
     depends_on:
       migrate-auth:
@@ -224,7 +224,7 @@ services:
       ROLLOVER_CRON: "0 0 * * *"
       REMINDER_CRON: "0 9 * * *"
       CLEANUP_CRON: "0 0 * * *"
-      PUBLIC_URL: http://localhost:8000
+      PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
       USER_SERVICE_ADDR: user-service:50052
       AUTH_SERVICE_ADDR: auth-service:50053
