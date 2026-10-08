@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}
       POSTGRES_DB: subscriptions
       TZ: Asia/Bangkok
     ports:
@@ -20,7 +20,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:?set USER_DB_PASSWORD}
       POSTGRES_DB: users
       TZ: Asia/Bangkok
     ports:
@@ -37,7 +37,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}
       POSTGRES_DB: auth
       TZ: Asia/Bangkok
     ports:
@@ -57,7 +57,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "postgres://postgres:postgres@postgres-subscription:5432/subscriptions?sslmode=disable",
+        "postgres://postgres:${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}@postgres-subscription:5432/subscriptions?sslmode=disable",
         "up",
       ]
     depends_on:
@@ -71,7 +71,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "postgres://postgres:postgres@postgres-user:5432/users?sslmode=disable",
+        "postgres://postgres:${USER_DB_PASSWORD:?set USER_DB_PASSWORD}@postgres-user:5432/users?sslmode=disable",
         "up",
       ]
     depends_on:
@@ -85,7 +85,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "postgres://postgres:postgres@postgres-auth:5432/auth?sslmode=disable",
+        "postgres://postgres:${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}@postgres-auth:5432/auth?sslmode=disable",
         "up",
       ]
     depends_on:
@@ -96,6 +96,8 @@ services:
     image: rabbitmq:3.13-management-alpine
     environment:
       TZ: Asia/Bangkok
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?set RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}
     ports:
       - "15672:15672" # management ui
     healthcheck:
@@ -141,12 +143,12 @@ services:
     environment:
       PORT: 8080
       GRPC_PORT: 50051
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       ENABLE_SWAGGER: "false"
       DB_HOST: postgres-subscription
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}
       DB_NAME: subscriptions
       DB_SSLMODE: disable
     depends_on:
@@ -160,12 +162,12 @@ services:
     environment:
       PORT: 8080
       GRPC_PORT: 50052
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       ENABLE_SWAGGER: "false"
       DB_HOST: postgres-user
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${USER_DB_PASSWORD:?set USER_DB_PASSWORD}
       DB_NAME: users
       DB_SSLMODE: disable
     depends_on:
@@ -179,7 +181,7 @@ services:
     environment:
       PORT: 8080
       GRPC_PORT: 50053
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       ACCESS_TTL: 15m
       REFRESH_TTL: 720h
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -191,7 +193,7 @@ services:
       DB_HOST: postgres-auth
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}
       DB_NAME: auth
       DB_SSLMODE: disable
       COOKIE_DOMAIN: ""
@@ -209,7 +211,7 @@ services:
       - "8086:8080"
     environment:
       PORT: 8080
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
       ENABLE_SWAGGER: "false"
     depends_on:
@@ -227,7 +229,7 @@ services:
       SMTP_FROM: noreply@subglutee.local
       MONGO_URI: mongodb://mongo:27017
       MONGO_DB_NAME: noti
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:?set RABBITMQ_USER}:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}@rabbitmq:5672/
     depends_on:
       mongo:
         condition: service_healthy
@@ -248,7 +250,7 @@ services:
       SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
       USER_SERVICE_ADDR: user-service:50052
       AUTH_SERVICE_ADDR: auth-service:50053
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:?set RABBITMQ_USER}:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}@rabbitmq:5672/
     depends_on:
       subscription-service:
         condition: service_started
@@ -264,7 +266,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres-subscription:5432/subscriptions?sslmode=disable
+      PGWEB_DATABASE_URL: postgres://postgres:${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}@postgres-subscription:5432/subscriptions?sslmode=disable
     depends_on:
       postgres-subscription:
         condition: service_healthy
@@ -274,7 +276,7 @@ services:
     ports:
       - "8083:8081"
     environment:
-      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres-user:5432/users?sslmode=disable
+      PGWEB_DATABASE_URL: postgres://postgres:${USER_DB_PASSWORD:?set USER_DB_PASSWORD}@postgres-user:5432/users?sslmode=disable
     depends_on:
       postgres-user:
         condition: service_healthy
@@ -284,7 +286,7 @@ services:
     ports:
       - "8085:8081"
     environment:
-      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres-auth:5432/auth?sslmode=disable
+      PGWEB_DATABASE_URL: postgres://postgres:${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}@postgres-auth:5432/auth?sslmode=disable
     depends_on:
       postgres-auth:
         condition: service_healthy
