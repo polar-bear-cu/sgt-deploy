@@ -1,13 +1,21 @@
-.PHONY: up down check logs
+.PHONY: up up-dev down check logs
+
+DEV = docker compose --env-file versions.dev.env --env-file .env
+LOCAL = $(DEV) -f docker-compose.yaml -f docker-compose.local.yaml
+CHECK = docker compose --env-file versions.dev.env --env-file .env.example
 
 up:
-	docker compose up -d --build
+	$(LOCAL) up -d --build
+
+up-dev:
+	$(DEV) up -d --pull always
 
 down:
-	docker compose down -v
+	$(LOCAL) down -v
 
 check:
-	docker compose config -q
+	$(CHECK) config -q
+	$(CHECK) -f docker-compose.yaml -f docker-compose.local.yaml config -q
 
 logs:
-	docker compose logs -f
+	$(LOCAL) logs -f

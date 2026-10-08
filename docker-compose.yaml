@@ -141,8 +141,7 @@ services:
       - "8025:8025" # web ui
 
   subscription-service:
-    build: ../sgt-subscription-service
-    image: sgt-subscription-service:local
+    image: ghcr.io/polar-bear-cu/sgt-subscription-service:${SUBSCRIPTION_TAG:?set SUBSCRIPTION_TAG}
     ports:
       - "8080:8080"
     environment:
@@ -161,8 +160,7 @@ services:
         condition: service_completed_successfully
 
   user-service:
-    build: ../sgt-user-service
-    image: sgt-user-service:local
+    image: ghcr.io/polar-bear-cu/sgt-user-service:${USER_TAG:?set USER_TAG}
     ports:
       - "8082:8080"
     environment:
@@ -181,8 +179,7 @@ services:
         condition: service_completed_successfully
 
   auth-service:
-    build: ../sgt-auth-service
-    image: sgt-auth-service:local
+    image: ghcr.io/polar-bear-cu/sgt-auth-service:${AUTH_TAG:?set AUTH_TAG}
     ports:
       - "8084:8080"
     environment:
@@ -213,8 +210,7 @@ services:
         condition: service_started
 
   report-service:
-    build: ../sgt-report-service
-    image: sgt-report-service:local
+    image: ghcr.io/polar-bear-cu/sgt-report-service:${REPORT_TAG:?set REPORT_TAG}
     ports:
       - "8086:8080"
     environment:
@@ -227,8 +223,7 @@ services:
         condition: service_started
 
   noti-service:
-    build: ../sgt-noti-service
-    image: sgt-noti-service:local
+    image: ghcr.io/polar-bear-cu/sgt-noti-service:${NOTI_TAG:?set NOTI_TAG}
     ports:
       - "8088:8080"
     environment:
@@ -246,8 +241,7 @@ services:
         condition: service_healthy
 
   scheduler:
-    build: ../sgt-scheduler
-    image: sgt-scheduler:local
+    image: ghcr.io/polar-bear-cu/sgt-scheduler:${SCHEDULER_TAG:?set SCHEDULER_TAG}
     restart: unless-stopped
     ports:
       - "8090:8080"
@@ -302,8 +296,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ../sgt-frontend
-    image: sgt-frontend:local
+    image: ghcr.io/polar-bear-cu/sgt-frontend:${FRONTEND_TAG:?set FRONTEND_TAG}
 
   envoy:
     image: envoyproxy/envoy:v1.31-latest
@@ -315,8 +308,7 @@ services:
       - user-service
 
   gateway:
-    build: ../sgt-gateway
-    image: sgt-gateway:local
+    image: ghcr.io/polar-bear-cu/sgt-gateway:${GATEWAY_TAG:?set GATEWAY_TAG}
     ports:
       - "8000:80"
     depends_on:
