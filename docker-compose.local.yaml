@@ -1,4 +1,22 @@
 services:
+  migrate-subscription:
+    build:
+      context: ../sgt-subscription-service
+      target: migrate
+    image: sgt-subscription-service-migrate:local
+
+  migrate-user:
+    build:
+      context: ../sgt-user-service
+      target: migrate
+    image: sgt-user-service-migrate:local
+
+  migrate-auth:
+    build:
+      context: ../sgt-auth-service
+      target: migrate
+    image: sgt-auth-service-migrate:local
+
   subscription-service:
     build: ../sgt-subscription-service
     image: sgt-subscription-service:local

@@ -51,9 +51,7 @@ services:
       retries: 5
 
   migrate-subscription:
-    image: migrate/migrate:v4.18.1
-    volumes:
-      - ../sgt-subscription-service/migrations:/migrations:ro
+    image: ghcr.io/polar-bear-cu/sgt-subscription-service-migrate:${SUBSCRIPTION_TAG:?set SUBSCRIPTION_TAG}
     command:
       [
         "-path",
@@ -67,9 +65,7 @@ services:
         condition: service_healthy
 
   migrate-user:
-    image: migrate/migrate:v4.18.1
-    volumes:
-      - ../sgt-user-service/migrations:/migrations:ro
+    image: ghcr.io/polar-bear-cu/sgt-user-service-migrate:${USER_TAG:?set USER_TAG}
     command:
       [
         "-path",
@@ -83,9 +79,7 @@ services:
         condition: service_healthy
 
   migrate-auth:
-    image: migrate/migrate:v4.18.1
-    volumes:
-      - ../sgt-auth-service/migrations:/migrations:ro
+    image: ghcr.io/polar-bear-cu/sgt-auth-service-migrate:${AUTH_TAG:?set AUTH_TAG}
     command:
       [
         "-path",
