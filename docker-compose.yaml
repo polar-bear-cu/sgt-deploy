@@ -187,6 +187,7 @@ services:
       - "8084:8080"
     environment:
       PORT: 8080
+      GRPC_PORT: 50053
       JWT_SECRET: ${JWT_SECRET}
       ACCESS_TTL: 15m
       REFRESH_TTL: 720h
@@ -247,19 +248,25 @@ services:
   scheduler:
     build: ../sgt-scheduler
     image: sgt-scheduler:local
+    restart: unless-stopped
     ports:
       - "8090:8080"
     environment:
       PORT: 8080
-      CRON_SPEC: "@every 1h"
-      WITHIN_HOURS: 24
+      ROLLOVER_CRON: "0 0 * * *"
+      REMINDER_CRON: "0 9 * * *"
+      CLEANUP_CRON: "0 0 * * *"
+      PUBLIC_URL: http://localhost:8000
       SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
       USER_SERVICE_ADDR: user-service:50052
+      AUTH_SERVICE_ADDR: auth-service:50053
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
     depends_on:
       subscription-service:
         condition: service_started
       user-service:
+        condition: service_started
+      auth-service:
         condition: service_started
       rabbitmq:
         condition: service_healthy
