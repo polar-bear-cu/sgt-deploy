@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `make up` | build จาก `../sgt-*` | เขียนโค้ด (ต้อง clone ทุก repo) |
 | `make up-dev` | `ghcr.io/polar-bear-cu/sgt-*:dev` | รันทั้งระบบโดยไม่ต้องมี source |
-| `make up-prod-smoke` | sha ใน `versions.prod.env` | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM |
+| `make up-prod-smoke` | sha ใน `versions.prod.env` | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
 
 ### Prerequisite
 
@@ -49,6 +49,7 @@ make up
 docker-compose.yaml         base: ทุก service, ไม่ publish port, image จาก GHCR ตาม <NAME>_TAG
 docker-compose.local.yaml   build จาก ../sgt-* (make up)
 docker-compose.tools.yaml   port บน 127.0.0.1 + pgweb / mongo-express (ใช้บน laptop เท่านั้น)
+docker-compose.smoke.yaml   publish แค่ gateway ที่ 127.0.0.1:8100 (make up-prod-smoke)
 versions.dev.env            tag ของแต่ละ service ฝั่ง dev
 versions.prod.env           sha ของ main ที่ deploy บน prod (สร้างตอน release)
 .env                        secret + config ต่อเครื่อง (gitignored)
@@ -87,7 +88,7 @@ frontend                                                  SPA, เข้าผ�
 ```terminal
 make up               # build จาก source แล้วรัน (build เฉพาะที่เปลี่ยน)
 make up-dev           # pull image :dev ล่าสุดแล้วรัน
-make up-prod-smoke    # รันชุด prod (project แยก sgt-prod-smoke) ต้อง make down ก่อนเพราะ port ชนกัน
+make up-prod-smoke    # รันชุด prod (project แยก sgt-prod-smoke) รันพร้อม make up ได้
 make down             # หยุดและลบ container แต่เก็บ volume (ข้อมูลยังอยู่)
 make down-prod-smoke  # หยุดชุด prod smoke
 make clean            # down -v ลบ volume ด้วย (DB/queue data หาย)
