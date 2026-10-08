@@ -6,8 +6,6 @@ services:
       POSTGRES_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}
       POSTGRES_DB: subscriptions
       TZ: Asia/Bangkok
-    ports:
-      - "5433:5432"
     volumes:
       - pgdata-subscription:/var/lib/postgresql/data
     healthcheck:
@@ -23,8 +21,6 @@ services:
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD:?set USER_DB_PASSWORD}
       POSTGRES_DB: users
       TZ: Asia/Bangkok
-    ports:
-      - "5434:5432"
     volumes:
       - pgdata-user:/var/lib/postgresql/data
     healthcheck:
@@ -40,8 +36,6 @@ services:
       POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}
       POSTGRES_DB: auth
       TZ: Asia/Bangkok
-    ports:
-      - "5435:5432"
     volumes:
       - pgdata-auth:/var/lib/postgresql/data
     healthcheck:
@@ -98,8 +92,6 @@ services:
       TZ: Asia/Bangkok
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?set RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}
-    ports:
-      - "15672:15672" # management ui
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
@@ -120,26 +112,11 @@ services:
     volumes:
       - mongodata:/data/db
 
-  mongo-express:
-    image: mongo-express:latest
-    ports:
-      - "8089:8081"
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
-      ME_CONFIG_BASICAUTH: "false"
-    depends_on:
-      mongo:
-        condition: service_healthy
-
   mailhog:
     image: mailhog/mailhog
-    ports:
-      - "8025:8025" # web ui
 
   subscription-service:
     image: ghcr.io/polar-bear-cu/sgt-subscription-service:${SUBSCRIPTION_TAG:?set SUBSCRIPTION_TAG}
-    ports:
-      - "8080:8080"
     environment:
       PORT: 8080
       GRPC_PORT: 50051
@@ -157,8 +134,6 @@ services:
 
   user-service:
     image: ghcr.io/polar-bear-cu/sgt-user-service:${USER_TAG:?set USER_TAG}
-    ports:
-      - "8082:8080"
     environment:
       PORT: 8080
       GRPC_PORT: 50052
@@ -176,8 +151,6 @@ services:
 
   auth-service:
     image: ghcr.io/polar-bear-cu/sgt-auth-service:${AUTH_TAG:?set AUTH_TAG}
-    ports:
-      - "8084:8080"
     environment:
       PORT: 8080
       GRPC_PORT: 50053
@@ -207,8 +180,6 @@ services:
 
   report-service:
     image: ghcr.io/polar-bear-cu/sgt-report-service:${REPORT_TAG:?set REPORT_TAG}
-    ports:
-      - "8086:8080"
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
@@ -220,8 +191,6 @@ services:
 
   noti-service:
     image: ghcr.io/polar-bear-cu/sgt-noti-service:${NOTI_TAG:?set NOTI_TAG}
-    ports:
-      - "8088:8080"
     environment:
       PORT: 8080
       SMTP_HOST: mailhog
@@ -239,8 +208,6 @@ services:
   scheduler:
     image: ghcr.io/polar-bear-cu/sgt-scheduler:${SCHEDULER_TAG:?set SCHEDULER_TAG}
     restart: unless-stopped
-    ports:
-      - "8090:8080"
     environment:
       PORT: 8080
       ROLLOVER_CRON: "0 0 * * *"
@@ -261,36 +228,6 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  pgweb-subscription:
-    image: sosedoff/pgweb:latest
-    ports:
-      - "8081:8081"
-    environment:
-      PGWEB_DATABASE_URL: postgres://postgres:${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}@postgres-subscription:5432/subscriptions?sslmode=disable
-    depends_on:
-      postgres-subscription:
-        condition: service_healthy
-
-  pgweb-user:
-    image: sosedoff/pgweb:latest
-    ports:
-      - "8083:8081"
-    environment:
-      PGWEB_DATABASE_URL: postgres://postgres:${USER_DB_PASSWORD:?set USER_DB_PASSWORD}@postgres-user:5432/users?sslmode=disable
-    depends_on:
-      postgres-user:
-        condition: service_healthy
-
-  pgweb-auth:
-    image: sosedoff/pgweb:latest
-    ports:
-      - "8085:8081"
-    environment:
-      PGWEB_DATABASE_URL: postgres://postgres:${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}@postgres-auth:5432/auth?sslmode=disable
-    depends_on:
-      postgres-auth:
-        condition: service_healthy
-
   frontend:
     image: ghcr.io/polar-bear-cu/sgt-frontend:${FRONTEND_TAG:?set FRONTEND_TAG}
 
@@ -298,15 +235,11 @@ services:
     image: envoyproxy/envoy:v1.31-latest
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
-    ports:
-      - "8091:8081"
     depends_on:
       - user-service
 
   gateway:
     image: ghcr.io/polar-bear-cu/sgt-gateway:${GATEWAY_TAG:?set GATEWAY_TAG}
-    ports:
-      - "8000:80"
     depends_on:
       - auth-service
       - user-service

@@ -1,0 +1,93 @@
+services:
+  postgres-subscription:
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  postgres-user:
+    ports:
+      - "127.0.0.1:5434:5432"
+
+  postgres-auth:
+    ports:
+      - "127.0.0.1:5435:5432"
+
+  rabbitmq:
+    ports:
+      - "127.0.0.1:15672:15672"
+
+  mongo-express:
+    image: mongo-express:latest
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8089:8081"
+
+  mailhog:
+    ports:
+      - "127.0.0.1:8025:8025"
+
+  subscription-service:
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  user-service:
+    ports:
+      - "127.0.0.1:8082:8080"
+
+  auth-service:
+    ports:
+      - "127.0.0.1:8084:8080"
+
+  report-service:
+    ports:
+      - "127.0.0.1:8086:8080"
+
+  noti-service:
+    ports:
+      - "127.0.0.1:8088:8080"
+
+  scheduler:
+    ports:
+      - "127.0.0.1:8090:8080"
+
+  pgweb-subscription:
+    image: sosedoff/pgweb:latest
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}@postgres-subscription:5432/subscriptions?sslmode=disable
+    depends_on:
+      postgres-subscription:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8081"
+
+  pgweb-user:
+    image: sosedoff/pgweb:latest
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:${USER_DB_PASSWORD:?set USER_DB_PASSWORD}@postgres-user:5432/users?sslmode=disable
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8083:8081"
+
+  pgweb-auth:
+    image: sosedoff/pgweb:latest
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}@postgres-auth:5432/auth?sslmode=disable
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8085:8081"
+
+  envoy:
+    ports:
+      - "127.0.0.1:8091:8081"
+
+  gateway:
+    ports:
+      - "127.0.0.1:8000:80"
