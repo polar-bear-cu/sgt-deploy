@@ -2,9 +2,18 @@
 
 รวมทุก service ของ Subglutee ขึ้น docker network เดียว จำลอง production topology (gateway เป็นทางเข้าเดียว)
 
+### Modes
+
+| คำสั่ง | image มาจาก | ใช้ตอน |
+| --- | --- | --- |
+| `make up` | build จาก `../sgt-*` | เขียนโค้ด (ต้อง clone ทุก repo) |
+| `make up-dev` | `ghcr.io/polar-bear-cu/sgt-*:dev` | รันทั้งระบบโดยไม่ต้องมี source |
+| `make up-prod-smoke` | sha ใน `versions.prod.env` | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
+
 ### Prerequisite
 
-clone repo ทั้งหมดเป็น sibling directory เดียวกัน (ชื่อ container ต้องตรงกับที่ `sgt-gateway/nginx.conf` อ้างถึง):
+- Docker
+- `make up`: clone repo ทั้งหมดเป็น sibling directory เดียวกัน
 
 ```
 final-proj/
@@ -19,7 +28,7 @@ final-proj/
   sgt-scheduler/
 ```
 
-- Docker
+- `make up-dev` / `make up-prod-smoke`: ถ้า package บน GHCR เป็น private ต้อง `docker login ghcr.io` ด้วย PAT ที่มีสิทธิ์ `read:packages` ก่อน
 
 ### Setup
 
@@ -30,35 +39,67 @@ cp .env.example .env   # ใส่ GOOGLE_CLIENT_ID/SECRET จริงถ้า
 make up
 ```
 
+ตัวแปรใน `.env` เป็น required ทั้งหมด ถ้า `.env` เก่าขาดตัวแปร compose จะขึ้น `required variable X is missing a value` ให้ copy บรรทัดที่ขาดมาจาก `.env.example`
+
+ค่าใน `.env.example` ใช้ได้แค่บนเครื่องตัวเอง บน prod ต้องสุ่มค่าใหม่ทุกตัว (เช่น `openssl rand -hex 24`) และใช้ Google OAuth client แยกจาก dev
+
+### Files
+
+```
+docker-compose.yaml         base: ทุก service, ไม่ publish port, image จาก GHCR ตาม <NAME>_TAG
+docker-compose.local.yaml   build จาก ../sgt-* (make up)
+docker-compose.tools.yaml   port บน 127.0.0.1 + pgweb / mongo-express (ใช้บน laptop เท่านั้น)
+docker-compose.smoke.yaml   publish แค่ gateway ที่ 127.0.0.1:8100 (make up-prod-smoke)
+versions.dev.env            tag ของแต่ละ service ฝั่ง dev
+versions.prod.env           sha ของ main ที่ deploy บน prod (สร้างตอน release)
+.env                        secret + config ต่อเครื่อง (gitignored)
+```
+
+### Ports
+
+ทุก port bind ที่ `127.0.0.1` เข้าได้จากเครื่องตัวเองเท่านั้น
+
 - gateway: http://localhost:8000
-- rabbitmq management ui: http://localhost:15672 (guest/guest)
+- rabbitmq management ui: http://localhost:15672 (user/password ตาม `RABBITMQ_USER` / `RABBITMQ_PASSWORD`)
 - mailhog ui: http://localhost:8025
 - mongo-express ui: http://localhost:8089
-- pgweb (subscription db): http://localhost:8081
-- pgweb (user db): http://localhost:8083
-- pgweb (auth db): http://localhost:8085
+- pgweb: subscription http://localhost:8081, user http://localhost:8083, auth http://localhost:8085
+- postgres: subscription 5433, user 5434, auth 5435
+- service ตรง: subscription 8080, user 8082, auth 8084, report 8086, noti 8088, scheduler 8090, envoy 8091
+
+ถ้า `make up` ขึ้น `ports are not available ... 127.0.0.1:<port>` แปลว่ามีโปรแกรมอื่นจับ port นั้นอยู่ (เช่น Firestore emulator ใช้ 8080) ให้ปิดโปรแกรมนั้นก่อน
 
 ### Structure
 
 ```
 postgres-subscription / postgres-user / postgres-auth   แยก DB ต่อ service
-migrate-subscription / migrate-user / migrate-auth      one-shot migration job, รันก่อน service ที่เกี่ยวข้อง
+migrate-subscription / migrate-user / migrate-auth      one-shot migration job (image sgt-<name>-migrate tag เดียวกับ service)
 rabbitmq / mongo / mailhog                               shared infra (noti + scheduler ใช้ queue เดียวกัน)
 subscription-service / auth-service                      REST + gRPC
 user-service                                              gRPC only, เข้าผ่าน gateway to envoy (grpc-web bridge)
 report-service / noti-service / scheduler                 gRPC client / consumer, ไม่มี DB เอง
 envoy                                                      bridge grpc-web ไป gRPC ใน user-service
-gateway                                                    ทางเข้าเดียว (:8000), route ไป frontend + REST + grpc-web (envoy)
-frontend                                                  SPA, เข้าผ่าน gateway เท่านั้น (ไม่ publish port ตรง)
+gateway                                                    ทางเข้าเดียว, route ไป frontend + REST + grpc-web (envoy)
+frontend                                                  SPA, เข้าผ่าน gateway เท่านั้น
 ```
 
 ### Useful Commands
 
 ```terminal
-make up       # docker compose up -d --build
-make down     # docker compose down -v (ลบ volume, DB/queue data หาย)
-make logs     # docker compose logs -f
-make check    # docker compose config -q (CI ใช้ตัวนี้)
+make up               # build จาก source แล้วรัน (build เฉพาะที่เปลี่ยน)
+make up-dev           # pull image :dev ล่าสุดแล้วรัน
+make up-prod-smoke    # รันชุด prod (project แยก sgt-prod-smoke) รันพร้อม make up ได้
+make down             # หยุดและลบ container แต่เก็บ volume (ข้อมูลยังอยู่)
+make down-prod-smoke  # หยุดชุด prod smoke
+make clean            # down -v ลบ volume ด้วย (DB/queue data หาย)
+make logs             # logs -f
+make check            # ตรวจ compose ทุกโหมด (CI ใช้ตัวนี้)
 ```
 
-rebuild/restart service เดียว: `docker compose up -d --build <name>`
+### Branch และ Release
+
+- ทุก repo รวม sgt-deploy ใช้ flow เดียวกัน: feature -> `dev` -> `main`
+- release = PR `dev` -> `main` แบบ merge commit (ห้าม squash) ไล่ตามลำดับ proto -> services -> frontend -> gateway -> deploy
+- CI ของ `dev` / `main` push `ghcr.io/polar-bear-cu/sgt-<name>:<branch>` และ `:<sha>` (subscription / user / auth มี `sgt-<name>-migrate` ด้วย)
+- prod pin image ด้วย sha ใน `versions.prod.env` rollback = revert commit ที่แก้ไฟล์นั้น
+- hotfix บน `main` ต้อง merge กลับเข้า `dev` ด้วยทุกครั้ง
