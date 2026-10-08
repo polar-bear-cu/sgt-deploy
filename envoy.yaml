@@ -15,6 +15,9 @@ static_resources:
                   virtual_hosts:
                     - name: user_service
                       domains: ["*"]
+                      request_headers_to_add:
+                        - header: { key: x-sgt-edge, value: "1" }
+                          append_action: OVERWRITE_IF_EXISTS_OR_ADD
                       routes:
                         - match: { prefix: "/" }
                           route:
