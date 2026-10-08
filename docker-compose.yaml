@@ -1,6 +1,7 @@
 services:
   postgres-subscription:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:?set SUBSCRIPTION_DB_PASSWORD}
@@ -16,6 +17,7 @@ services:
 
   postgres-user:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD:?set USER_DB_PASSWORD}
@@ -31,6 +33,7 @@ services:
 
   postgres-auth:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD}
@@ -88,6 +91,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
     environment:
       TZ: Asia/Bangkok
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?set RABBITMQ_USER}
@@ -102,6 +106,7 @@ services:
 
   mongo:
     image: mongo:7
+    restart: unless-stopped
     environment:
       TZ: Asia/Bangkok
     healthcheck:
@@ -114,9 +119,11 @@ services:
 
   mailhog:
     image: mailhog/mailhog
+    restart: unless-stopped
 
   subscription-service:
     image: ghcr.io/polar-bear-cu/sgt-subscription-service:${SUBSCRIPTION_TAG:?set SUBSCRIPTION_TAG}
+    restart: unless-stopped
     environment:
       PORT: 8080
       GRPC_PORT: 50051
@@ -134,6 +141,7 @@ services:
 
   user-service:
     image: ghcr.io/polar-bear-cu/sgt-user-service:${USER_TAG:?set USER_TAG}
+    restart: unless-stopped
     environment:
       PORT: 8080
       GRPC_PORT: 50052
@@ -151,6 +159,7 @@ services:
 
   auth-service:
     image: ghcr.io/polar-bear-cu/sgt-auth-service:${AUTH_TAG:?set AUTH_TAG}
+    restart: unless-stopped
     environment:
       PORT: 8080
       GRPC_PORT: 50053
@@ -180,6 +189,7 @@ services:
 
   report-service:
     image: ghcr.io/polar-bear-cu/sgt-report-service:${REPORT_TAG:?set REPORT_TAG}
+    restart: unless-stopped
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
@@ -191,6 +201,7 @@ services:
 
   noti-service:
     image: ghcr.io/polar-bear-cu/sgt-noti-service:${NOTI_TAG:?set NOTI_TAG}
+    restart: unless-stopped
     environment:
       PORT: 8080
       SMTP_HOST: mailhog
@@ -230,9 +241,11 @@ services:
 
   frontend:
     image: ghcr.io/polar-bear-cu/sgt-frontend:${FRONTEND_TAG:?set FRONTEND_TAG}
+    restart: unless-stopped
 
   envoy:
     image: envoyproxy/envoy:v1.31-latest
+    restart: unless-stopped
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
     depends_on:
@@ -240,6 +253,7 @@ services:
 
   gateway:
     image: ghcr.io/polar-bear-cu/sgt-gateway:${GATEWAY_TAG:?set GATEWAY_TAG}
+    restart: unless-stopped
     depends_on:
       - auth-service
       - user-service
