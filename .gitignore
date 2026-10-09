@@ -2,3 +2,4 @@
 versions.live.env
 .autodeploy-*
 __pycache__/
+tests/node_modules/*
