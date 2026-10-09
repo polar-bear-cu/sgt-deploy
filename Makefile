@@ -1,4 +1,4 @@
-.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod loadtest
+.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod loadtest tokens
 
 COMPOSE = docker compose --env-file versions.dev.env --env-file .env
 DEV = $(COMPOSE) -f docker-compose.yaml -f docker-compose.tools.yaml
@@ -11,6 +11,12 @@ CHECK_PROD = docker compose --env-file versions.prod.env --env-file .env.example
 BASE_URL ?= http://host.docker.internal:8000
 T ?= smoke
 K6 = docker run --rm -v "$(CURDIR)/tests:/scripts" -e BASE_URL=$(BASE_URL) grafana/k6:2.3.0
+ifeq ($(OS),Windows_NT)
+PYTHON ?= python
+else
+PYTHON ?= python3
+endif
+USERS ?= 50
 
 export MSYS_NO_PATHCONV := 1
 
@@ -53,3 +59,6 @@ logs-prod:
 
 loadtest:
 	$(K6) run /scripts/$(T).ts
+
+tokens:
+	$(PYTHON) scripts/mint_tokens.py --users $(USERS)
