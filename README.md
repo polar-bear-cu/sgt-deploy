@@ -133,7 +133,31 @@ make up-prod
 - Caddy ออก cert จาก Let's Encrypt เองเมื่อ DNS ชี้มาที่เครื่องและเปิด 80/443 แล้ว เช็คด้วย `curl https://<domain>/healthz`
 - Google OAuth ของ prod ต้องเพิ่ม redirect URI `https://<domain>/api/v1/auth/google/callback`
 
-deploy เวอร์ชันใหม่: merge release เข้า `main` แล้วบน VM รัน `git pull && make up-prod`
+#### Auto deploy
+
+VM ดึงอัปเดตเองทุก 2 นาทีด้วย systemd timer (`scripts/autodeploy.py`)
+
+- sgt-deploy: ถ้า `main` มี commit ใหม่และ CI เขียว -> `git merge --ff-only`
+- แต่ละ service: ถ้า sha ล่าสุดของ `main` ต่างจากที่รันอยู่และ CI ของ sha นั้นเขียว (push image สำเร็จ) -> ใช้ sha ใหม่
+- มีอะไรเปลี่ยน -> เขียน `versions.live.env` (ไม่อยู่ใน git) แล้ว `make up-prod PROD_VERSIONS=versions.live.env`
+- deploy ล้มจะไม่ลองชุดเดิมซ้ำจนกว่าจะมี commit ใหม่
+
+ติดตั้งครั้งแรกบน VM
+
+```terminal
+sudo cp systemd/sgt-autodeploy.service systemd/sgt-autodeploy.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now sgt-autodeploy.timer
+```
+
+```terminal
+systemctl list-timers sgt-autodeploy.timer    # รอบถัดไป
+journalctl -u sgt-autodeploy -n 50            # log
+cat versions.live.env                         # sha ที่รันอยู่
+touch .autodeploy-paused                      # หยุด auto deploy ชั่วคราว (ลบไฟล์เพื่อเปิดต่อ)
+```
+
+rollback: หยุด auto deploy ก่อน แล้วแก้ sha ใน `versions.live.env` เป็นตัวก่อนหน้า แล้ว `make up-prod PROD_VERSIONS=versions.live.env` จากนั้นแก้ที่ต้นเหตุใน `main` ก่อนเปิด auto deploy อีกครั้ง
 
 ดู mailhog ของ prod ผ่าน SSH tunnel แล้วเปิด http://localhost:8025
 
