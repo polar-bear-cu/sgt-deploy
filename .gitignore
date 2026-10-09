@@ -1,1 +1,4 @@
 .env
+versions.live.env
+.autodeploy-*
+__pycache__/

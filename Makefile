@@ -4,7 +4,8 @@ COMPOSE = docker compose --env-file versions.dev.env --env-file .env
 DEV = $(COMPOSE) -f docker-compose.yaml -f docker-compose.tools.yaml
 LOCAL = $(DEV) -f docker-compose.local.yaml
 SMOKE = docker compose -p sgt-prod-smoke --env-file versions.prod.env --env-file .env -f docker-compose.yaml -f docker-compose.smoke.yaml
-PROD = docker compose --env-file versions.prod.env --env-file .env -f docker-compose.yaml -f docker-compose.prod.yaml
+PROD_VERSIONS ?= versions.prod.env
+PROD = docker compose --env-file $(PROD_VERSIONS) --env-file .env -f docker-compose.yaml -f docker-compose.prod.yaml
 CHECK = docker compose --env-file versions.dev.env --env-file .env.example
 CHECK_PROD = docker compose --env-file versions.prod.env --env-file .env.example
 

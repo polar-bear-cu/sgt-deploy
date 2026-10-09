@@ -1,0 +1,10 @@
+[Unit]
+Description=Subglutee auto deploy from main
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/sgt-deploy
+ExecStart=/usr/bin/python3 /home/ubuntu/sgt-deploy/scripts/autodeploy.py
