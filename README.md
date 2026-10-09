@@ -9,6 +9,7 @@
 | `make up` | build จาก `../sgt-*` | เขียนโค้ด (ต้อง clone ทุก repo) |
 | `make up-dev` | `ghcr.io/polar-bear-cu/sgt-*:dev` | รันทั้งระบบโดยไม่ต้องมี source |
 | `make up-prod-smoke` | sha ใน `versions.prod.env` | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
+| `make up-prod` | sha ใน `versions.prod.env` + Caddy | บน VM จริง (HTTPS) |
 
 ### Prerequisite
 
@@ -50,6 +51,8 @@ docker-compose.yaml         base: ทุก service, ไม่ publish port, ima
 docker-compose.local.yaml   build จาก ../sgt-* (make up)
 docker-compose.tools.yaml   port บน 127.0.0.1 + pgweb / mongo-express (ใช้บน laptop เท่านั้น)
 docker-compose.smoke.yaml   publish แค่ gateway ที่ 127.0.0.1:8100 (make up-prod-smoke)
+docker-compose.prod.yaml    Caddy (HTTPS) หน้า gateway + จำกัด cache ของ mongo (make up-prod)
+Caddyfile                   reverse proxy ไป gateway พร้อม HSTS
 versions.dev.env            tag ของแต่ละ service ฝั่ง dev
 versions.prod.env           sha ของ main ที่ deploy บน prod (สร้างตอน release)
 .env                        secret + config ต่อเครื่อง (gitignored)
@@ -91,10 +94,54 @@ make up-dev           # pull image :dev ล่าสุดแล้วรัน
 make up-prod-smoke    # รันชุด prod (project แยก sgt-prod-smoke) รันพร้อม make up ได้
 make down             # หยุดและลบ container แต่เก็บ volume (ข้อมูลยังอยู่)
 make down-prod-smoke  # หยุดชุด prod smoke
+make up-prod          # บน VM: pull image ตาม versions.prod.env แล้วรันพร้อม Caddy
+make down-prod        # บน VM: หยุด (เก็บ volume)
+make logs-prod        # บน VM: logs -f
 make clean            # down -v ลบ volume ด้วย (DB/queue data หาย)
 make logs             # logs -f
 make check            # ตรวจ compose ทุกโหมด (CI ใช้ตัวนี้)
 ```
+
+### Production (EC2)
+
+เครื่อง: AWS EC2 `t3.small` (Ubuntu 24.04, ap-southeast-2) + Elastic IP + DuckDNS เปิดแค่ 80/443 ส่วน SSH เปิดเฉพาะ IP ของทีม ต้องมี Docker และ swap 2 GB ก่อน
+
+ครั้งแรก
+
+```terminal
+git clone https://github.com/polar-bear-cu/sgt-deploy.git
+cd sgt-deploy
+umask 077
+cat > .env <<EOF
+DOMAIN=<domain>
+PUBLIC_URL=https://<domain>
+COOKIE_SECURE=true
+JWT_SECRET=$(openssl rand -hex 32)
+GOOGLE_CLIENT_ID=<prod client id>
+GOOGLE_CLIENT_SECRET=<prod client secret>
+SUBSCRIPTION_DB_PASSWORD=$(openssl rand -hex 24)
+USER_DB_PASSWORD=$(openssl rand -hex 24)
+AUTH_DB_PASSWORD=$(openssl rand -hex 24)
+RABBITMQ_USER=sgt
+RABBITMQ_PASSWORD=$(openssl rand -hex 24)
+EOF
+make up-prod
+```
+
+- `umask 077` ทำให้ `.env` อ่านได้แค่เจ้าของไฟล์ และห้ามใช้ค่าจาก `.env.example` บน prod
+- password ต้องเป็น hex (URL-safe) เพราะถูกใส่ใน connection string
+- Caddy ออก cert จาก Let's Encrypt เองเมื่อ DNS ชี้มาที่เครื่องและเปิด 80/443 แล้ว เช็คด้วย `curl https://<domain>/healthz`
+- Google OAuth ของ prod ต้องเพิ่ม redirect URI `https://<domain>/api/v1/auth/google/callback`
+
+deploy เวอร์ชันใหม่: merge release เข้า `main` แล้วบน VM รัน `git pull && make up-prod`
+
+ดู mailhog ของ prod ผ่าน SSH tunnel แล้วเปิด http://localhost:8025
+
+```terminal
+ssh -L 8025:127.0.0.1:8025 -i <key.pem> ubuntu@<domain>
+```
+
+เช็คเครดิตที่เหลือใน AWS Settings ทุกสัปดาห์ ถ้าเครดิตหมด account จะปิดและข้อมูลหาย
 
 ### Branch และ Release
 
