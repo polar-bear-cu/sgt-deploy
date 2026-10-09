@@ -1,4 +1,4 @@
-.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod smoke seed tokens
+.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod smoke seed tokens load
 
 COMPOSE = docker compose --env-file versions.dev.env --env-file .env
 DEV = $(COMPOSE) -f docker-compose.yaml -f docker-compose.tools.yaml
@@ -65,3 +65,6 @@ tokens:
 seed:
 	$(if $(N_SUB_PER_USER),,$(error N_SUB_PER_USER is required: eg. "make seed N_SUB_PER_USER=100"))
 	$(K6) run /scripts/seed.ts
+
+load:
+	$(K6) run /scripts/load.ts
