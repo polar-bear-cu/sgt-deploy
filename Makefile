@@ -1,4 +1,4 @@
-.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod loadtest tokens
+.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod smoke seed tokens
 
 COMPOSE = docker compose --env-file versions.dev.env --env-file .env
 DEV = $(COMPOSE) -f docker-compose.yaml -f docker-compose.tools.yaml
@@ -9,14 +9,12 @@ PROD = docker compose --env-file $(PROD_VERSIONS) --env-file .env -f docker-comp
 CHECK = docker compose --env-file versions.dev.env --env-file .env.example
 CHECK_PROD = docker compose --env-file versions.prod.env --env-file .env.example
 BASE_URL ?= http://host.docker.internal:8000
-T ?= smoke
-K6 = docker run --rm -v "$(CURDIR)/tests:/scripts" -e BASE_URL=$(BASE_URL) grafana/k6:2.3.0
+K6 = docker run --rm -v "$(CURDIR)/tests:/scripts" -e BASE_URL=$(BASE_URL) -e N_SUB_PER_USER=$(N_SUB_PER_USER) grafana/k6:2.3.0
 ifeq ($(OS),Windows_NT)
 PYTHON ?= python
 else
 PYTHON ?= python3
 endif
-USERS ?= 50
 
 export MSYS_NO_PATHCONV := 1
 
@@ -57,8 +55,13 @@ logs:
 logs-prod:
 	$(PROD) logs -f
 
-loadtest:
-	$(K6) run /scripts/$(T).ts
+smoke:
+	$(K6) run /scripts/smoke.ts
 
 tokens:
-	$(PYTHON) scripts/mint_tokens.py --users $(USERS)
+	$(if $(N_USERS),,$(error N_USERS is required: eg. "make tokens N_USERS=50"))
+	$(PYTHON) scripts/mint_tokens.py --users $(N_USERS)
+
+seed:
+	$(if $(N_SUB_PER_USER),,$(error N_SUB_PER_USER is required: eg. "make seed N_SUB_PER_USER=100"))
+	$(K6) run /scripts/seed.ts
