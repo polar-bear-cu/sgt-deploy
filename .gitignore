@@ -5,3 +5,4 @@ __pycache__/
 tests/node_modules/*
 tests/tokens.json
 tests/reports/*.html
+backups/
