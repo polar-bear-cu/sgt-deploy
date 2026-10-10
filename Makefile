@@ -1,4 +1,4 @@
-.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod smoke seed tokens load
+.PHONY: up up-dev up-prod-smoke up-prod down down-prod-smoke down-prod clean check logs logs-prod smoke seed tokens load stress
 
 COMPOSE = docker compose --env-file versions.dev.env --env-file .env
 DEV = $(COMPOSE) -f docker-compose.yaml -f docker-compose.tools.yaml
@@ -68,3 +68,6 @@ seed:
 
 load:
 	$(K6) run /scripts/load.ts
+
+stress:
+	$(K6) run /scripts/stress.ts

@@ -5,7 +5,8 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "types": ["k6"]
+    "types": ["k6"],
+    "allowImportingTsExtensions": true
   },
   "include": ["*.ts"]
 }
