@@ -9,7 +9,7 @@ PROD = docker compose --env-file $(PROD_VERSIONS) --env-file .env -f docker-comp
 CHECK = docker compose --env-file versions.dev.env --env-file .env.example
 CHECK_PROD = docker compose --env-file versions.prod.env --env-file .env.example
 BASE_URL ?= http://host.docker.internal:8000
-K6 = docker run --rm -v "$(CURDIR)/tests:/scripts" -e BASE_URL=$(BASE_URL) -e N_SUB_PER_USER=$(N_SUB_PER_USER) grafana/k6:2.3.0
+K6 = docker run --rm -v "$(CURDIR)/tests:/scripts" -e BASE_URL=$(BASE_URL) -e N_SUB_PER_USER=$(N_SUB_PER_USER) -e K6_WEB_DASHBOARD=true -e K6_WEB_DASHBOARD_PERIOD=2s -e K6_WEB_DASHBOARD_EXPORT=/scripts/reports/$@.html grafana/k6:2.3.0
 ifeq ($(OS),Windows_NT)
 PYTHON ?= python
 else
