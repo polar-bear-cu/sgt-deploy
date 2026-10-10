@@ -4,12 +4,12 @@
 
 ### Modes
 
-| คำสั่ง | image มาจาก | ใช้ตอน |
-| --- | --- | --- |
-| `make up` | build จาก `../sgt-*` | เขียนโค้ด (ต้อง clone ทุก repo) |
-| `make up-dev` | `ghcr.io/polar-bear-cu/sgt-*:dev` | รันทั้งระบบโดยไม่ต้องมี source |
-| `make up-prod-smoke` | sha ใน `versions.prod.env` | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
-| `make up-prod` | sha ใน `versions.prod.env` + Caddy | บน VM จริง (HTTPS) |
+| คำสั่ง               | image มาจาก                        | ใช้ตอน                                                                     |
+| -------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| `make up`            | build จาก `../sgt-*`               | เขียนโค้ด (ต้อง clone ทุก repo)                                            |
+| `make up-dev`        | `ghcr.io/polar-bear-cu/sgt-*:dev`  | รันทั้งระบบโดยไม่ต้องมี source                                             |
+| `make up-prod-smoke` | sha ใน `versions.prod.env`         | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
+| `make up-prod`       | sha ใน `versions.prod.env` + Caddy | บน VM จริง (HTTPS)                                                         |
 
 ### Prerequisite
 
@@ -205,3 +205,34 @@ make stress
 - CI ของ `dev` / `main` push `ghcr.io/polar-bear-cu/sgt-<name>:<branch>` และ `:<sha>` (subscription / user / auth มี `sgt-<name>-migrate` ด้วย)
 - prod pin image ด้วย sha ใน `versions.prod.env` rollback = revert commit ที่แก้ไฟล์นั้น
 - hotfix บน `main` ต้อง merge กลับเข้า `dev` ด้วยทุกครั้ง
+
+#### Backup
+
+backup ทุกวัน 03:00 (เวลาไทย) ด้วย systemd timer (`scripts/backup.py`): `pg_dump` ทั้ง 3 DB และ `mongodump` ของ `noti` ไว้ใน `backups/<เวลา>/` เก็บ 7 ชุดล่าสุด (โฟลเดอร์อ่านได้แค่เจ้าของ)
+
+ติดตั้งครั้งแรกบน VM
+
+```terminal
+sudo cp systemd/sgt-backup.service systemd/sgt-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now sgt-backup.timer
+```
+
+```terminal
+make backup                          # backup ทันที (เช่นก่อนทำอะไรเสี่ยง)
+systemctl list-timers sgt-backup.timer
+journalctl -u sgt-backup -n 20
+```
+
+offsite: ทุกสัปดาห์ดึงชุดล่าสุดมาเก็บนอก VM (มีข้อมูลส่วนตัวของ user ห้ามเก็บใน repo หรือแชร์)
+
+```terminal
+scp -r -i <key.pem> ubuntu@<domain>:~/sgt-deploy/backups/<ชุด> <โฟลเดอร์นอก repo>
+```
+
+restore (ตัวอย่าง subscription) หยุด service ที่ใช้ DB นั้นก่อน
+
+```terminal
+docker exec -i sgt-deploy-postgres-subscription-1 pg_restore -U postgres -d subscriptions --clean --if-exists --no-owner < backups/<ชุด>/subscriptions.dump
+docker exec -i sgt-deploy-mongo-1 mongorestore --archive --gzip --drop < backups/<ชุด>/noti.archive.gz
+```
