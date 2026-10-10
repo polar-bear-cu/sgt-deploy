@@ -4,12 +4,12 @@
 
 ### Modes
 
-| คำสั่ง | image มาจาก | ใช้ตอน |
-| --- | --- | --- |
-| `make up` | build จาก `../sgt-*` | เขียนโค้ด (ต้อง clone ทุก repo) |
-| `make up-dev` | `ghcr.io/polar-bear-cu/sgt-*:dev` | รันทั้งระบบโดยไม่ต้องมี source |
-| `make up-prod-smoke` | sha ใน `versions.prod.env` | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
-| `make up-prod` | sha ใน `versions.prod.env` + Caddy | บน VM จริง (HTTPS) |
+| คำสั่ง               | image มาจาก                        | ใช้ตอน                                                                     |
+| -------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| `make up`            | build จาก `../sgt-*`               | เขียนโค้ด (ต้อง clone ทุก repo)                                            |
+| `make up-dev`        | `ghcr.io/polar-bear-cu/sgt-*:dev`  | รันทั้งระบบโดยไม่ต้องมี source                                             |
+| `make up-prod-smoke` | sha ใน `versions.prod.env`         | ลองชุด prod บนเครื่องตัวเองก่อนขึ้น VM (gateway ที่ http://localhost:8100) |
+| `make up-prod`       | sha ใน `versions.prod.env` + Caddy | บน VM จริง (HTTPS)                                                         |
 
 ### Prerequisite
 
@@ -56,6 +56,8 @@ Caddyfile                   reverse proxy ไป gateway พร้อม HSTS
 versions.dev.env            tag ของแต่ละ service ฝั่ง dev
 versions.prod.env           sha ของ main ที่ deploy บน prod (สร้างตอน release)
 .env                        secret + config ต่อเครื่อง (gitignored)
+tests/                      k6 load test (smoke / seed / load / stress), ผลอยู่ใน tests/reports/
+scripts/mint_tokens.py      สร้าง JWT ของ user ทดสอบจาก JWT_SECRET ใน .env (make tokens)
 ```
 
 ### Ports
@@ -167,6 +169,35 @@ ssh -L 8025:127.0.0.1:8025 -i <key.pem> ubuntu@<domain>
 
 เช็คเครดิตที่เหลือใน AWS Settings ทุกสัปดาห์ ถ้าเครดิตหมด account จะปิดและข้อมูลหาย
 
+### Load test (k6)
+
+k6 รันผ่าน docker (`grafana/k6:2.3.0`) ไม่ต้องติดตั้ง ส่วน `tests/package.json` มีแค่ `@types/k6` ไว้ให้ editor (`cd tests && npm ci`)
+
+```
+smoke    1 VU 10 วินาที ยิง /healthz เช็คว่า script และ network ใช้ได้
+seed     สร้าง subscription ให้ user ทดสอบคนละ N_SUB_PER_USER รายการ
+load     ตาม NFR-2: 50 VU 5 นาที, list / detail / summary p95 < 2s, error < 1%
+stress   ขั้นบันได 50 -> 100 -> 200 -> 300 VU หาจุดที่ระบบเริ่มช้า
+```
+
+```terminal
+make tokens N_USERS=50           # JWT ของ user ทดสอบ (sub = uuid สุ่ม, อายุ 2 ชม.) -> tests/tokens.json
+make seed N_SUB_PER_USER=100
+make load
+make stress
+```
+
+- ผลอยู่ใน `tests/reports/<target>.html` (gitignored)
+- ยิงที่อื่นด้วย `BASE_URL=` เช่น `make load BASE_URL=https://<domain>` ค่า default คือ gateway บน laptop
+- อย่า mint token ใหม่ระหว่างรอบ เพราะข้อมูลที่ seed ไว้ผูกกับ `sub` ชุดเดิม ถ้า token หมดอายุให้ลบข้อมูลแล้วเริ่มใหม่ทั้งชุด
+- ข้อมูลทดสอบชื่อ `loadtest-*` และวันบิลอยู่ในเดือนธันวาคม 2027 เพื่อไม่ให้ scheduler ส่ง reminder หา user ที่ไม่มีอยู่จริง
+
+ยิง prod
+
+- mint token บน VM เท่านั้น (`JWT_SECRET` ห้ามออกจากเครื่อง) แล้ว scp `tokens.json` กลับมา ไฟล์นี้เป็น credential ห้ามแชร์
+- บน VM ให้ `touch .autodeploy-paused` ก่อนยิง และเช็ค CPU credit balance ในแท็บ Monitoring ของ EC2 ให้เหลือพอ (โหมด standard จะโดนลดเหลือ 20% เมื่อ credit หมด)
+- ลบข้อมูลทดสอบหลังเสร็จ แล้วลบ `.autodeploy-paused`
+
 ### Branch และ Release
 
 - ทุก repo รวม sgt-deploy ใช้ flow เดียวกัน: feature -> `dev` -> `main`
@@ -174,3 +205,34 @@ ssh -L 8025:127.0.0.1:8025 -i <key.pem> ubuntu@<domain>
 - CI ของ `dev` / `main` push `ghcr.io/polar-bear-cu/sgt-<name>:<branch>` และ `:<sha>` (subscription / user / auth มี `sgt-<name>-migrate` ด้วย)
 - prod pin image ด้วย sha ใน `versions.prod.env` rollback = revert commit ที่แก้ไฟล์นั้น
 - hotfix บน `main` ต้อง merge กลับเข้า `dev` ด้วยทุกครั้ง
+
+#### Backup
+
+backup ทุกวัน 03:00 (เวลาไทย) ด้วย systemd timer (`scripts/backup.py`): `pg_dump` ทั้ง 3 DB และ `mongodump` ของ `noti` ไว้ใน `backups/<เวลา>/` เก็บ 7 ชุดล่าสุด (โฟลเดอร์อ่านได้แค่เจ้าของ)
+
+ติดตั้งครั้งแรกบน VM
+
+```terminal
+sudo cp systemd/sgt-backup.service systemd/sgt-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now sgt-backup.timer
+```
+
+```terminal
+make backup                          # backup ทันที (เช่นก่อนทำอะไรเสี่ยง)
+systemctl list-timers sgt-backup.timer
+journalctl -u sgt-backup -n 20
+```
+
+offsite: ทุกสัปดาห์ดึงชุดล่าสุดมาเก็บนอก VM (มีข้อมูลส่วนตัวของ user ห้ามเก็บใน repo หรือแชร์)
+
+```terminal
+scp -r -i <key.pem> ubuntu@<domain>:~/sgt-deploy/backups/<ชุด> <โฟลเดอร์นอก repo>
+```
+
+restore (ตัวอย่าง subscription) หยุด service ที่ใช้ DB นั้นก่อน
+
+```terminal
+docker exec -i sgt-deploy-postgres-subscription-1 pg_restore -U postgres -d subscriptions --clean --if-exists --no-owner < backups/<ชุด>/subscriptions.dump
+docker exec -i sgt-deploy-mongo-1 mongorestore --archive --gzip --drop < backups/<ชุด>/noti.archive.gz
+```
