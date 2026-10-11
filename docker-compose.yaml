@@ -208,6 +208,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM: noreply@subglutee.local
