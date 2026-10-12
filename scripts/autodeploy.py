@@ -137,6 +137,11 @@ def main():
     state["failed_deploy"] = ""
     save_state(state)
     log("deploy ok")
+
+    try:
+        log("image prune: " + run("docker", "image", "prune", "-af").splitlines()[-1])
+    except subprocess.CalledProcessError as err:
+        log("image prune FAILED: " + (err.stderr or err.stdout)[-300:])
     return 0
 
 
