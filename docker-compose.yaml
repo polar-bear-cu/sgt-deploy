@@ -208,6 +208,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM: noreply@subglutee.local
@@ -225,9 +226,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8080
-      ROLLOVER_CRON: "0 0 * * *"
-      REMINDER_CRON: "0 9 * * *"
-      CLEANUP_CRON: "0 0 * * *"
+      ROLLOVER_CRON: ${ROLLOVER_CRON:-0 0 * * *}
+      REMINDER_CRON: ${REMINDER_CRON:-0 9 * * *}
+      CLEANUP_CRON: ${CLEANUP_CRON:-0 0 * * *}
       PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
       USER_SERVICE_ADDR: user-service:50052
