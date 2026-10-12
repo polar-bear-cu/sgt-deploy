@@ -143,6 +143,8 @@ VM ดึงอัปเดตเองทุก 2 นาทีด้วย syst
 - แต่ละ service: ถ้า sha ล่าสุดของ `main` ต่างจากที่รันอยู่และ CI ของ sha นั้นเขียว (push image สำเร็จ) -> ใช้ sha ใหม่
 - มีอะไรเปลี่ยน -> เขียน `versions.live.env` (ไม่อยู่ใน git) แล้ว `make up-prod PROD_VERSIONS=versions.live.env`
 - deploy ล้มจะไม่ลองชุดเดิมซ้ำจนกว่าจะมี commit ใหม่
+- deploy สำเร็จ -> `docker image prune -af` ลบ image ที่ไม่มี container ใช้ (rollback ไป sha เก่าจะ pull จาก GHCR ใหม่)
+- log ของทุก container หมุนที่ 10MB x 3 ไฟล์ (`x-logging` ใน compose)
 
 ติดตั้งครั้งแรกบน VM
 

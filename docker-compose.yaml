@@ -1,6 +1,13 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres-subscription:
     image: postgres:16-alpine
+    logging: *default-logging
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -17,6 +24,7 @@ services:
 
   postgres-user:
     image: postgres:16-alpine
+    logging: *default-logging
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -33,6 +41,7 @@ services:
 
   postgres-auth:
     image: postgres:16-alpine
+    logging: *default-logging
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -49,6 +58,7 @@ services:
 
   migrate-subscription:
     image: ghcr.io/polar-bear-cu/sgt-subscription-service-migrate:${SUBSCRIPTION_TAG:?set SUBSCRIPTION_TAG}
+    logging: *default-logging
     command:
       [
         "-path",
@@ -63,6 +73,7 @@ services:
 
   migrate-user:
     image: ghcr.io/polar-bear-cu/sgt-user-service-migrate:${USER_TAG:?set USER_TAG}
+    logging: *default-logging
     command:
       [
         "-path",
@@ -77,6 +88,7 @@ services:
 
   migrate-auth:
     image: ghcr.io/polar-bear-cu/sgt-auth-service-migrate:${AUTH_TAG:?set AUTH_TAG}
+    logging: *default-logging
     command:
       [
         "-path",
@@ -91,6 +103,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
+    logging: *default-logging
     restart: unless-stopped
     environment:
       TZ: Asia/Bangkok
@@ -108,6 +121,7 @@ services:
 
   mongo:
     image: mongo:7
+    logging: *default-logging
     restart: unless-stopped
     environment:
       TZ: Asia/Bangkok
@@ -123,10 +137,12 @@ services:
 
   mailhog:
     image: mailhog/mailhog
+    logging: *default-logging
     restart: unless-stopped
 
   subscription-service:
     image: ghcr.io/polar-bear-cu/sgt-subscription-service:${SUBSCRIPTION_TAG:?set SUBSCRIPTION_TAG}
+    logging: *default-logging
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -145,6 +161,7 @@ services:
 
   user-service:
     image: ghcr.io/polar-bear-cu/sgt-user-service:${USER_TAG:?set USER_TAG}
+    logging: *default-logging
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -163,6 +180,7 @@ services:
 
   auth-service:
     image: ghcr.io/polar-bear-cu/sgt-auth-service:${AUTH_TAG:?set AUTH_TAG}
+    logging: *default-logging
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -193,6 +211,7 @@ services:
 
   report-service:
     image: ghcr.io/polar-bear-cu/sgt-report-service:${REPORT_TAG:?set REPORT_TAG}
+    logging: *default-logging
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -205,6 +224,7 @@ services:
 
   noti-service:
     image: ghcr.io/polar-bear-cu/sgt-noti-service:${NOTI_TAG:?set NOTI_TAG}
+    logging: *default-logging
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -223,6 +243,7 @@ services:
 
   scheduler:
     image: ghcr.io/polar-bear-cu/sgt-scheduler:${SCHEDULER_TAG:?set SCHEDULER_TAG}
+    logging: *default-logging
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -246,10 +267,12 @@ services:
 
   frontend:
     image: ghcr.io/polar-bear-cu/sgt-frontend:${FRONTEND_TAG:?set FRONTEND_TAG}
+    logging: *default-logging
     restart: unless-stopped
 
   envoy:
     image: envoyproxy/envoy:v1.31-latest
+    logging: *default-logging
     restart: unless-stopped
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
@@ -258,6 +281,7 @@ services:
 
   gateway:
     image: ghcr.io/polar-bear-cu/sgt-gateway:${GATEWAY_TAG:?set GATEWAY_TAG}
+    logging: *default-logging
     restart: unless-stopped
     depends_on:
       - auth-service
