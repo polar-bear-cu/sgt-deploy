@@ -58,6 +58,7 @@ versions.prod.env           sha ของ main ที่ deploy บน prod (ส
 .env                        secret + config ต่อเครื่อง (gitignored)
 tests/                      k6 load test (smoke / seed / load / stress), ผลอยู่ใน tests/reports/
 scripts/mint_tokens.py      สร้าง JWT ของ user ทดสอบจาก JWT_SECRET ใน .env (make tokens)
+scripts/cleanup_loadtest.py ลบข้อมูล loadtest-* หลังเทสต์ (make cleanup-loadtest)
 ```
 
 ### Ports
@@ -187,6 +188,7 @@ make tokens N_USERS=50           # JWT ของ user ทดสอบ (sub = uui
 make seed N_SUB_PER_USER=100
 make load
 make stress
+make cleanup-loadtest            # ลบ loadtest-* ของ sub ใน tests/tokens.json (TOKENS=<path> เปลี่ยนไฟล์, ANY_USER=1 ลบทุก user ใช้บนเครื่องตัวเองเท่านั้น)
 ```
 
 - ผลอยู่ใน `tests/reports/<target>.html` (gitignored)
@@ -198,7 +200,7 @@ make stress
 
 - mint token บน VM เท่านั้น (`JWT_SECRET` ห้ามออกจากเครื่อง) แล้ว scp `tokens.json` กลับมา ไฟล์นี้เป็น credential ห้ามแชร์
 - บน VM ให้ `touch .autodeploy-paused` ก่อนยิง และเช็ค CPU credit balance ในแท็บ Monitoring ของ EC2 ให้เหลือพอ (โหมด standard จะโดนลดเหลือ 20% เมื่อ credit หมด)
-- ลบข้อมูลทดสอบหลังเสร็จ แล้วลบ `.autodeploy-paused`
+- ลบข้อมูลทดสอบหลังเสร็จด้วย `make cleanup-loadtest TOKENS=<tokens.json บน VM>` แล้วลบ `.autodeploy-paused`
 
 ### Branch และ Release
 
