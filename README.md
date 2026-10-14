@@ -145,7 +145,7 @@ VM ดึงอัปเดตเองทุก 2 นาทีด้วย syst
 - มีอะไรเปลี่ยน -> เขียน `versions.live.env` (ไม่อยู่ใน git) แล้ว `make up-prod PROD_VERSIONS=versions.live.env`
 - deploy ล้มจะไม่ลองชุดเดิมซ้ำจนกว่าจะมี commit ใหม่
 - deploy สำเร็จ -> `docker image prune -af` ลบ image ที่ไม่มี container ใช้ (rollback ไป sha เก่าจะ pull จาก GHCR ใหม่)
-- log ของทุก container หมุนที่ 10MB x 3 ไฟล์ (`x-logging` ใน compose)
+- log ของ container: dev หมุนที่ 10MB x 3 ไฟล์ ส่วน prod ส่งเข้า journald ของ VM (ดู Logs)
 
 ติดตั้งครั้งแรกบน VM
 
@@ -239,4 +239,23 @@ restore (ตัวอย่าง subscription) หยุด service ที่�
 ```terminal
 docker exec -i sgt-deploy-postgres-subscription-1 pg_restore -U postgres -d subscriptions --clean --if-exists --no-owner < backups/<ชุด>/subscriptions.dump
 docker exec -i sgt-deploy-mongo-1 mongorestore --archive --gzip --drop < backups/<ชุด>/noti.archive.gz
+```
+
+#### Logs
+
+prod ใช้ log driver `journald` (`docker-compose.prod.yaml`) log อยู่ใน journal ของ VM ไม่หายเมื่อ container ถูกสร้างใหม่ เก็บ 100 วันหรือไม่เกิน 4GB (NFR-10.4 ต้องการอย่างน้อย 90 วัน)
+
+ติดตั้งครั้งแรกบน VM
+
+```terminal
+sudo mkdir -p /etc/systemd/journald.conf.d
+sudo cp systemd/journald-sgt.conf /etc/systemd/journald.conf.d/
+sudo systemctl restart systemd-journald
+```
+
+```terminal
+make logs-prod                                           # ทุก service แบบ live
+journalctl CONTAINER_NAME=sgt-deploy-gateway-1 -n 50     # ย้อนหลังของ container เดียว
+journalctl CONTAINER_NAME=sgt-deploy-noti-service-1 --since "7 days ago"
+journalctl --disk-usage
 ```

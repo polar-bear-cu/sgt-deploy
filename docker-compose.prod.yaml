@@ -1,13 +1,12 @@
-x-logging: &default-logging
-  driver: json-file
+x-logging: &prod-logging
+  driver: journald
   options:
-    max-size: "10m"
-    max-file: "3"
+    tag: "{{.Name}}"
 
 services:
   caddy:
     image: caddy:2.11-alpine
-    logging: *default-logging
+    logging: *prod-logging
     restart: unless-stopped
     ports:
       - "80:80"
@@ -24,10 +23,45 @@ services:
 
   mongo:
     command: ["mongod", "--wiredTigerCacheSizeGB", "0.3"]
+    logging: *prod-logging
 
   mailhog:
     ports:
       - "127.0.0.1:8025:8025"
+    logging: *prod-logging
+
+  postgres-subscription:
+    logging: *prod-logging
+  postgres-user:
+    logging: *prod-logging
+  postgres-auth:
+    logging: *prod-logging
+  migrate-subscription:
+    logging: *prod-logging
+  migrate-user:
+    logging: *prod-logging
+  migrate-auth:
+    logging: *prod-logging
+  rabbitmq:
+    logging: *prod-logging
+  subscription-service:
+    logging: *prod-logging
+  user-service:
+    logging: *prod-logging
+  auth-service:
+    logging: *prod-logging
+  report-service:
+    logging: *prod-logging
+  noti-service:
+    logging: *prod-logging
+  scheduler:
+    logging: *prod-logging
+  frontend:
+    logging: *prod-logging
+  envoy:
+    logging: *prod-logging
+  gateway:
+    logging: *prod-logging
 
 volumes:
   caddy_data:
