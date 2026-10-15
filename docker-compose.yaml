@@ -175,9 +175,12 @@ services:
       DB_NAME: users
       DB_SSLMODE: disable
       SUBSCRIPTION_SERVICE_ADDR: subscription-service:50051
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:?set RABBITMQ_USER}:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}@rabbitmq:5672/
     depends_on:
       migrate-user:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
 
   auth-service:
     image: ghcr.io/polar-bear-cu/sgt-auth-service:${AUTH_TAG:?set AUTH_TAG}
