@@ -67,10 +67,10 @@ seed:
 	$(K6) run /scripts/seed.ts
 
 load:
-	$(K6) run /scripts/load.ts
+	set -o pipefail; $(K6) run /scripts/load.ts | tee tests/reports/$@-summary.txt
 
 stress:
-	$(K6) run /scripts/stress.ts
+	set -o pipefail; $(K6) run /scripts/stress.ts | tee tests/reports/$@-summary.txt
 
 cleanup-loadtest:
 	$(PYTHON) scripts/cleanup_loadtest.py $(if $(TOKENS),--tokens $(TOKENS)) $(if $(ANY_USER),--any-user)
