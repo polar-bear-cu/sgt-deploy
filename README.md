@@ -192,7 +192,7 @@ make cleanup-loadtest            # ลบ loadtest-* ของ sub ใน tests/
 ```
 
 - ผลอยู่ใน `tests/reports/<target>.html` (gitignored)
-- ยิงที่อื่นด้วย `BASE_URL=` เช่น `make load BASE_URL=https://<domain>` ค่า default คือ gateway บน laptop
+- `smoke` `seed` `load` `stress` ต้องใส่ `BASE_URL=` ทุกครั้ง: `http://host.docker.internal:8000` (stack บนเครื่อง) หรือ `https://<domain>` (prod) ไม่มีค่า default กันยิง prod หรือ local โดยไม่ตั้งใจ
 - อย่า mint token ใหม่ระหว่างรอบ เพราะข้อมูลที่ seed ไว้ผูกกับ `sub` ชุดเดิม ถ้า token หมดอายุให้ลบข้อมูลแล้วเริ่มใหม่ทั้งชุด
 - ข้อมูลทดสอบชื่อ `loadtest-*` และวันบิลอยู่ในเดือนธันวาคม 2027 เพื่อไม่ให้ scheduler ส่ง reminder หา user ที่ไม่มีอยู่จริง
 
