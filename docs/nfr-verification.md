@@ -8,7 +8,7 @@
 |---|---|---|
 | 1.1 Timeliness 100 reminders | ผ่าน: 100/100 ภายใน 203 ms | PC |
 | 1.2 Timestamps | ผ่านแบบมีข้อจำกัด: ใช้ config + `sent_at` | VM |
-| 2.1, 2.2 Response time / error rate | ผ่าน: p95 ประมาณ 298 ms, error 0% | PC ยิง prod |
+| 2.1, 2.2 Response time / error rate | ผ่าน: p95 ไม่เกิน 298.16 ms, error 0% | PC ยิง prod |
 | 3.1 Uptime 99% | gap: ยังไม่ได้วัด | - |
 | 4.1, 4.2 Backup / restore | ผ่าน | VM, PC |
 | 5.1 Determinism | ผ่าน: API 3 ครั้ง = SQL | browser, PC |
@@ -190,12 +190,14 @@ docker exec sgt-deploy-mongo-1 mongosh --quiet noti --eval 'db.email_logs.find({
 
 ผล
 
-- 2.1 ผ่าน: p95 list 297.7 ms, detail 295.5 ms, summary 295.7 ms (เกณฑ์ 2 วินาที)
-- 2.2 ผ่าน: error 0% (เกณฑ์ไม่เกิน 1%)
-- stress 300 VU: p95 ประมาณ 298 ms, error 1 ครั้งจาก 121,545 request
-- เวลาส่วนใหญ่คือระยะทางเน็ตจาก PC ไป Sydney (ประมาณ 287 ms) ฝั่ง server ใช้ราว 10 ms
+ผลรอบล่าสุด (2026-10-21)
 
-เช็คก่อนใช้: ใน `load.html` ค่า p95 ต้องประมาณ 297 ms ถ้าเห็นประมาณ 3 ms คือไฟล์ที่ซ้อมบน PC ไม่ใช่ของ prod
+- 2.1 ผ่าน: p95 list 298.16 ms, detail 294.61 ms, summary 295.48 ms (เกณฑ์ 2 วินาที)
+- 2.2 ผ่าน: error 0% (0 จาก 17,223 request, เกณฑ์ไม่เกิน 1%)
+- stress 300 VU: p95 307.13 ms, error 0 จาก 120,555 request (154 req/s)
+- request ที่เร็วที่สุดใช้ประมาณ 280 ms ซึ่งเกือบทั้งหมดคือระยะทางเน็ตจากกรุงเทพฯ ไป Sydney ฝั่ง server ใช้ราว 10 ms
+
+เช็คก่อนใช้: ใน `load.html` ค่า p95 ต้องประมาณ 295-298 ms ถ้าเห็นประมาณ 3 ms คือไฟล์ที่ซ้อมบน PC ไม่ใช่ของ prod
 
 ---
 
