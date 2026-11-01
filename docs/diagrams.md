@@ -4,6 +4,32 @@
 
 C4 Level 2 ใช้ภาพ architecture เดิมจากสไลด์ Deli 5
 
+## use-cases
+
+Use case diagram (Mermaid ไม่มี use case diagram โดยตรง จึงใช้ flowchart และวงรีแทน)
+
+```mermaid
+flowchart LR
+    user(["User"])
+    admin(["Admin"])
+    google["Google OAuth"]
+    mail["Email provider"]
+
+    subgraph sys["Sub Glu Tee"]
+        uc1(("UC1 Login ด้วย Google"))
+        uc2(("UC2 จัดการ subscription"))
+        uc3(("UC3 ดู Dashboard / Report"))
+        uc4(("UC4 รับแจ้งเตือนก่อนตัดเงิน"))
+        uc5(("ลบบัญชี (PDPA)"))
+        uc6(("จัดการ role ผู้ใช้"))
+    end
+
+    user --- uc1 & uc2 & uc3 & uc4 & uc5
+    admin --- uc1 & uc6
+    uc1 --- google
+    uc4 --- mail
+```
+
 ## c4-l1
 
 C4 Level 1: System Context
