@@ -8,7 +8,7 @@ PROD_VERSIONS ?= versions.prod.env
 PROD = docker compose --env-file $(PROD_VERSIONS) --env-file .env -f docker-compose.yaml -f docker-compose.prod.yaml
 CHECK = docker compose --env-file versions.dev.env --env-file .env.example
 CHECK_PROD = docker compose --env-file versions.prod.env --env-file .env.example
-BASE_URL ?= http://host.docker.internal:8000
+NEED_BASE_URL = $(if $(BASE_URL),,$(error BASE_URL is required: eg. BASE_URL=https://...))
 K6 = docker run --rm -v "$(CURDIR)/tests:/scripts" -e BASE_URL=$(BASE_URL) -e N_SUB_PER_USER=$(N_SUB_PER_USER) -e K6_WEB_DASHBOARD=true -e K6_WEB_DASHBOARD_PERIOD=2s -e K6_WEB_DASHBOARD_EXPORT=/scripts/reports/$@.html grafana/k6:2.3.0
 ifeq ($(OS),Windows_NT)
 PYTHON ?= python
@@ -56,6 +56,7 @@ logs-prod:
 	$(PROD) logs -f
 
 smoke:
+	$(NEED_BASE_URL)
 	$(K6) run /scripts/smoke.ts
 
 tokens:
@@ -63,14 +64,17 @@ tokens:
 	$(PYTHON) scripts/mint_tokens.py --users $(N_USERS)
 
 seed:
+	$(NEED_BASE_URL)
 	$(if $(N_SUB_PER_USER),,$(error N_SUB_PER_USER is required: eg. "make seed N_SUB_PER_USER=100"))
 	$(K6) run /scripts/seed.ts
 
 load:
-	$(K6) run /scripts/load.ts
+	$(NEED_BASE_URL)
+	set -o pipefail; $(K6) run --quiet /scripts/load.ts | tee tests/reports/$@-summary.txt
 
 stress:
-	$(K6) run /scripts/stress.ts
+	$(NEED_BASE_URL)
+	set -o pipefail; $(K6) run --quiet /scripts/stress.ts | tee tests/reports/$@-summary.txt
 
 cleanup-loadtest:
 	$(PYTHON) scripts/cleanup_loadtest.py $(if $(TOKENS),--tokens $(TOKENS)) $(if $(ANY_USER),--any-user)
