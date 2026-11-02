@@ -195,9 +195,9 @@ docker exec sgt-deploy-mongo-1 mongosh --quiet noti --eval 'db.email_logs.find({
 - 2.1 ผ่าน: p95 list 298.16 ms, detail 294.61 ms, summary 295.48 ms (เกณฑ์ 2 วินาที)
 - 2.2 ผ่าน: error 0% (0 จาก 17,223 request, เกณฑ์ไม่เกิน 1%)
 - stress 300 VU: p95 307.13 ms, error 0 จาก 120,555 request (154 req/s)
-- request ที่เร็วที่สุดใช้ประมาณ 280 ms ซึ่งเกือบทั้งหมดคือระยะทางเน็ตจากกรุงเทพฯ ไป Sydney ฝั่ง server ใช้ราว 10 ms
+- latency ทุก request: min 279.61 ms, median 289.09 ms, p95 295.85 ms (จาก `load-summary.txt`)
 
-เช็คก่อนใช้: ใน `load.html` ค่า p95 ต้องประมาณ 295-298 ms ถ้าเห็นประมาณ 3 ms คือไฟล์ที่ซ้อมบน PC ไม่ใช่ของ prod
+เช็คก่อนใช้: ใน `load.html` ค่า p95 ต้องอยู่ในช่วง 294-299 ms ถ้าเห็นหลัก ms ตัวเดียว คือไฟล์ที่ซ้อมบน PC ไม่ใช่ของ prod
 
 ---
 
@@ -224,7 +224,7 @@ docker exec sgt-deploy-mongo-1 mongosh --quiet noti --eval 'db.email_logs.find({
 
 #### ต่อจากนี้: UptimeRobot
 
-ตั้ง monitor แล้วเมื่อ 2026-11-02 ประมาณ 08:08 เวลาไทย: HTTP(s) ยิง `https://subglutee.duckdns.org/healthz` ทุก 5 นาที (แผนฟรี) บัญชีอยู่กับคนที่ตั้ง ขอดูผลจากคนนั้น
+ตั้ง monitor แล้วเมื่อ 2026-11-02 (จุดแรกในกราฟ UptimeRobot 08:09): HTTP(s) ยิง `https://subglutee.duckdns.org/healthz` ทุก 5 นาที (แผนฟรี) บัญชีอยู่กับคนที่ตั้ง ขอดูผลจากคนนั้น
 
 **[browser]** อ่านผล
 
@@ -501,7 +501,7 @@ journalctl CONTAINER_NAME=sgt-deploy-scheduler-1 --since "7 days ago" | grep "re
 
 ผลทดสอบ 2026-11-02: `failed` 11 ครั้ง (05:07:12 ถึง 05:07:44, error `lookup mailhog ... no such host`) แล้ว `sent` 1 ครั้งตอน 05:07:47 หลังเปิด mailhog
 
-ข้อสังเกต (ใส่ใน risk matrix): ในโค้ดไม่มีการรอระหว่าง retry (`Nack` แล้วเข้าคิวใหม่ทันที) รอบนี้ห่างกันราว 3 วินาทีเพราะการหา DNS ที่ล้มใช้เวลาเอง ถ้า mail server ตอบ error ทันที จะวนถี่กว่านี้มาก
+ข้อสังเกต (ใส่ใน risk matrix): ในโค้ดไม่มีการรอระหว่าง retry (`Nack` แล้วเข้าคิวใหม่ทันที) รอบนี้ fail 11 ครั้งใน 32 วินาที ที่ไม่ถี่กว่านี้เพราะการหา DNS ที่ล้มใช้เวลาเอง ถ้า mail server ตอบ error ทันที จะวนถี่กว่านี้มาก
 
 ### 10.2 เก็บ check time และเวลาที่ mail server รับ ของแต่ละ reminder
 
