@@ -16,12 +16,13 @@ flowchart LR
     mail["Email provider"]
 
     subgraph sys["Sub Glu Tee"]
-        uc1(("UC1 Login ด้วย Google"))
-        uc2(("UC2 จัดการ subscription"))
-        uc3(("UC3 ดู Dashboard / Report"))
-        uc4(("UC4 รับแจ้งเตือนก่อนตัดเงิน"))
-        uc5(("ลบบัญชี (PDPA)"))
-        uc6(("จัดการ role ผู้ใช้"))
+        direction TB
+        uc1(["UC1 Login ด้วย Google"])
+        uc2(["UC2 จัดการ subscription"])
+        uc3(["UC3 ดู Dashboard / Report"])
+        uc4(["UC4 รับแจ้งเตือนก่อนตัดเงิน"])
+        uc5(["ลบบัญชี (PDPA)"])
+        uc6(["จัดการ role ผู้ใช้"])
     end
 
     user --- uc1 & uc2 & uc3 & uc4 & uc5
@@ -61,15 +62,15 @@ flowchart TB
 C4 Level 3: Component ของ subscription-service
 
 ```mermaid
-flowchart LR
+flowchart TB
     gw["nginx API Gateway"]
-    sched["scheduler"]
-    report["report-service"]
-    usersvc["user-service"]
+    sched["scheduler<br/>ListDueReminders<br/>AdvanceBillingDates"]
+    report["report-service<br/>GetSubscriptionsForReport"]
+    usersvc["user-service<br/>DeleteSubscriptionsByUser"]
     db[("postgres-subscription")]
 
     subgraph svc["subscription-service"]
-        direction TB
+        direction LR
         routes["routes + JWT middleware<br/>(gin)"]
         ctl["SubscriptionController<br/>REST handlers"]
         grpcsrv["gRPC server<br/>SubscriptionService"]
@@ -84,9 +85,9 @@ flowchart LR
     end
 
     gw -- "REST /api/v1/subscriptions" --> routes
-    sched -- "gRPC ListDueReminders, AdvanceBillingDates" --> grpcsrv
-    report -- "gRPC GetSubscriptionsForReport" --> grpcsrv
-    usersvc -- "gRPC DeleteSubscriptionsByUser" --> grpcsrv
+    sched -- "gRPC" --> grpcsrv
+    report -- "gRPC" --> grpcsrv
+    usersvc -- "gRPC" --> grpcsrv
     pg -- "pgx" --> db
 ```
 
@@ -96,6 +97,7 @@ C4 Level 4: Code ของ use case สรุปค่าใช้จ่าย�
 
 ```mermaid
 classDiagram
+    direction LR
     class SubscriptionController {
         -uc *SubscriptionUsecase
         +GetSummary(c *gin.Context)
@@ -152,7 +154,7 @@ sequenceDiagram
     G-->>A: email, google_sub
     A->>US: FindOrCreateUser (gRPC)
     US-->>A: user_id, role
-    A-->>U: 302 ไป /auth/callback#access_token=... + Set-Cookie refresh token (HttpOnly)
+    A-->>U: 302 ไป /auth/callback#35;access_token=... + Set-Cookie refresh token (HttpOnly)
     U->>GW: API request + Authorization: Bearer JWT
     Note over GW,US: แต่ละ service ตรวจ JWT เอง
 ```
