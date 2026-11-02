@@ -9,7 +9,7 @@
 | 1.1 Timeliness 100 reminders | ผ่าน: 100/100 ภายใน 203 ms | PC |
 | 1.2 Timestamps | ผ่านแบบมีข้อจำกัด: ใช้ config + `sent_at` | VM |
 | 2.1, 2.2 Response time / error rate | ผ่าน: p95 ไม่เกิน 298.16 ms, error 0% | PC ยิง prod |
-| 3.1 Uptime 99% | gap: ยังไม่ได้วัด | - |
+| 3.1 Uptime 99% | กำลังวัด: CloudWatch status check 0 fail ตั้งแต่ 10-09, UptimeRobot เริ่ม 11-02 | browser |
 | 4.1, 4.2 Backup / restore | ผ่าน | VM, PC |
 | 5.1 Determinism | ผ่าน: API 3 ครั้ง = SQL | browser, PC |
 | 6.1 HTTPS | ผ่าน | PC |
@@ -203,11 +203,43 @@ docker exec sgt-deploy-mongo-1 mongosh --quiet noti --eval 'db.email_logs.find({
 
 ## NFR-3 Availability
 
-### 3.1 uptime อย่างน้อย 99% (gap)
+### 3.1 uptime อย่างน้อย 99% (กำลังวัด)
 
-ยังไม่มีการวัด ทีมเลือกใส่เป็น risk ใน risk matrix คู่กับ "VM เครื่องเดียว ถ้าล่มทั้งระบบล่ม"
+มีหลักฐาน 2 ส่วน: ย้อนหลังจาก CloudWatch และวัดต่อจากนี้ด้วย UptimeRobot
 
-ถ้าจะวัดในอนาคต: ใช้ external monitor ยิง `https://subglutee.duckdns.org/healthz` ทุก 1-5 นาที แล้วคิด `จำนวนครั้งที่ตอบ 200 / จำนวนครั้งทั้งหมด` ในช่วงที่กำหนด (เช่น 30 วัน) ไม่นับช่วง maintenance ที่ประกาศไว้
+#### ย้อนหลัง: CloudWatch StatusCheckFailed
+
+**[browser]**
+
+1. AWS Console เลือก region Sydney (ap-southeast-2)
+2. CloudWatch → Metrics → All metrics → EC2 → Per-Instance Metrics → ติ๊ก `StatusCheckFailed` ของ instance prod
+3. ช่วงเวลา Custom → Absolute `2026-10-09 00:00` ถึงวันที่ต้องการ เลือก UTC
+4. แท็บ Graphed metrics: Statistic `Maximum`, Period `5 minutes`
+
+ผ่านถ้าเส้นแบนที่ 0 ตลอด ต้องใช้ Maximum เพราะ Average จะกลบความล้มเหลวสั้น ๆ จนมองไม่เห็น
+
+ผล 2026-11-02: 0 ตลอดตั้งแต่ 2026-10-09 19:20 UTC (เครื่องเริ่มทำงาน) ถึง 2026-11-01
+
+ข้อจำกัด: วัดแค่ว่า AWS ติดต่อเครื่องได้ ไม่นับช่วงที่ reboot เอง ช่วง autodeploy สร้าง container ใหม่ หรือ service ข้างในล่มขณะที่เครื่องยังเปิด
+
+#### ต่อจากนี้: UptimeRobot
+
+ตั้ง monitor แล้วเมื่อ 2026-11-02 ประมาณ 08:08 เวลาไทย: HTTP(s) ยิง `https://subglutee.duckdns.org/healthz` ทุก 5 นาที (แผนฟรี) บัญชีอยู่กับคนที่ตั้ง ขอดูผลจากคนนั้น
+
+**[browser]** อ่านผล
+
+1. เข้า UptimeRobot → Monitoring → `subglutee.duckdns.org`
+2. ดูการ์ด Last 7 days และ Last 30 days: ตัวเลข % คือ uptime และบรรทัดใต้ตัวเลขคือจำนวน incident กับเวลาที่ล่มรวม
+3. ถ้า % ต่ำกว่า 99 ให้เลื่อนลงไปดูรายการ incident ว่าล่มช่วงไหน แล้วเทียบกับ autodeploy log หรือการ reboot
+
+ผ่านถ้า uptime ในช่วงที่วัดได้ไม่ต่ำกว่า 99%
+
+อ่านผลให้ถูก:
+
+- นับเฉพาะช่วงหลังวันที่ตั้ง monitor ถึงแม้แถบ Last 24 hours จะขึ้นเขียวเต็มตั้งแต่วันแรกก็ตาม
+- `/healthz` เป็น nginx ตอบเอง (`sgt-gateway/nginx.conf`) จึงวัดได้แค่ VM + Caddy + gateway ถ้า backend ตัวใดล่มแต่ nginx ยังอยู่ ตรงนี้จะยังเป็น Up
+- response time ที่ UptimeRobot แสดงวัดจาก region Europe ไปถึง Sydney ใช้เทียบกับ NFR-2 ไม่ได้
+- ช่วงที่วัดได้ก่อนนำเสนอมีแค่ไม่กี่วัน เกณฑ์ 99% ปกติวัดกันเป็นเดือน ให้บอกตรง ๆ ว่าเป็นผลเบื้องต้น
 
 เช็คว่าตอนนี้ระบบตอบอยู่
 
