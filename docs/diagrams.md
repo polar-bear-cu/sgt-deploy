@@ -195,3 +195,47 @@ sequenceDiagram
         end
     end
 ```
+
+## deployment
+
+Deployment Overview: EC2 เครื่องเดียว รันทุก container ด้วย Docker Compose
+
+```mermaid
+flowchart LR
+    browser(["Browser"])
+    google["Google OAuth"]
+    ghcr["GitHub CI + GHCR<br/>image tag = commit sha"]
+
+    subgraph ec2["AWS EC2 t3.small (Sydney) + Elastic IP: รันทุก container ด้วย Docker Compose"]
+        direction LR
+            caddy["Caddy<br/>HTTPS + HSTS"]
+            gateway["nginx<br/>API Gateway"]
+            envoy["Envoy<br/>gRPC-web"]
+            frontend["frontend"]
+            services["6 services<br/>auth, user, subscription,<br/>report, noti, scheduler<br/>(คุยกันด้วย gRPC)"]
+            mq["RabbitMQ"]
+            data[("PostgreSQL x3<br/>MongoDB")]
+            mail["MailHog<br/>(SMTP)"]
+        systemd["systemd timers<br/>autodeploy ทุก 2 นาที<br/>backup ทุกวัน 03:00"]
+    end
+
+    browser -- "HTTPS<br/>subglutee.duckdns.org" --> caddy
+    caddy --> gateway
+    gateway --> frontend
+    gateway -- "REST" --> services
+    gateway -- "gRPC-web" --> envoy
+    envoy -- "gRPC" --> services
+    services <--> mq
+    services --> data
+    services --> mail
+    services -- "OAuth 2.0" --> google
+    ghcr -. "pull image" .-> systemd
+
+    classDef system fill:#7a2020,color:#f6f1e8,stroke:#7a2020
+    classDef external fill:#e9dcc9,color:#2b2420,stroke:#a4524a
+    classDef plain fill:#fbf8f2,color:#2b2420,stroke:#2b2420
+    class caddy,gateway system
+    class google,ghcr external
+    class browser,frontend,envoy,services,mq,data,mail,systemd plain
+    style ec2 fill:#fbf8f2,stroke:#7a2020
+```
