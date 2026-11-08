@@ -233,9 +233,11 @@ services:
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
-      SMTP_FROM: noreply@subglutee.local
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-noreply@subglutee.local}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       MONGO_URI: mongodb://mongo:27017
       MONGO_DB_NAME: noti
       RABBITMQ_URL: amqp://${RABBITMQ_USER:?set RABBITMQ_USER}:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}@rabbitmq:5672/

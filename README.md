@@ -170,6 +170,19 @@ rollback: หยุด auto deploy ก่อน แล้วแก้ sha ใน
 ssh -L 8025:127.0.0.1:8025 -i <key.pem> ubuntu@<domain>
 ```
 
+ส่งเมลเข้ากล่องจริงบน prod: เพิ่มค่าเหล่านี้ใน `.env` บน VM แล้วรัน `make up-prod PROD_VERSIONS=versions.live.env` ถ้าไม่ตั้ง ระบบจะส่งเข้า mailhog เหมือนเดิม
+
+```terminal
+SMTP_HOST=<smtp host>
+SMTP_PORT=587
+SMTP_FROM=<อีเมลผู้ส่งที่ provider อนุญาต>
+SMTP_USERNAME=<username>
+SMTP_PASSWORD='<password>'
+```
+
+- provider ต้องรองรับ STARTTLS เพราะ `net/smtp` จะไม่ส่งรหัสผ่านผ่านการเชื่อมต่อที่ไม่ได้เข้ารหัส
+- ครอบ `SMTP_PASSWORD` ด้วย single quote กัน `$` ถูกแปลงเป็นตัวแปร
+
 เช็คเครดิตที่เหลือใน AWS Settings ทุกสัปดาห์ ถ้าเครดิตหมด account จะปิดและข้อมูลหาย
 
 ### Load test (k6)
