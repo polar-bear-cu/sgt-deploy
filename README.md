@@ -164,7 +164,7 @@ touch .autodeploy-paused                      # หยุด auto deploy ชั�
 
 rollback: หยุด auto deploy ก่อน แล้วแก้ sha ใน `versions.live.env` เป็นตัวก่อนหน้า แล้ว `make up-prod PROD_VERSIONS=versions.live.env` จากนั้นแก้ที่ต้นเหตุใน `main` ก่อนเปิด auto deploy อีกครั้ง
 
-ดู mailhog ของ prod ผ่าน SSH tunnel แล้วเปิด http://localhost:8025
+ถ้า prod ยังไม่ได้ตั้งค่า SMTP จริง เมลจะเข้า mailhog ดูผ่าน SSH tunnel แล้วเปิด http://localhost:8025
 
 ```terminal
 ssh -L 8025:127.0.0.1:8025 -i <key.pem> ubuntu@<domain>
